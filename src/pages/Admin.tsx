@@ -3,7 +3,8 @@ import { toast } from 'sonner'
 import { Icon } from '@/components/Icon'
 import { EmptyState } from '@/components/EmptyState'
 import { useAuth } from '@/components/auth/auth-context'
-import { DeleteUser, IsSuperAdmin, ListUsers, type AdminUser } from '@/backend/services/Admin-Services/AdminUsers'
+import { useIsAdmin } from '@/hooks/use-is-admin'
+import { DeleteUser, ListUsers, type AdminUser } from '@/backend/services/Admin-Services/AdminUsers'
 
 function formatFecha(iso: string | null): string {
   if (!iso) return '—'
@@ -18,7 +19,7 @@ function formatFecha(iso: string | null): string {
 
 export function Admin() {
   const { user } = useAuth()
-  const esAdmin = IsSuperAdmin(user?.id)
+  const esAdmin = useIsAdmin()
   const [usuarios, setUsuarios] = useState<AdminUser[]>([])
   const [loading, setLoading] = useState(true)
   const [borrando, setBorrando] = useState<AdminUser | null>(null)

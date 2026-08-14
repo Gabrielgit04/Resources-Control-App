@@ -50,8 +50,9 @@ export function Login() {
     setLoading(false)
     toast.success('Sesión iniciada. ¡Bienvenido de nuevo!')
 
-    const from = (location.state as { from?: string } | null)?.from ?? '/dashboard'
-    navigate(from, { replace: true })
+    const from = (location.state as { from?: string } | null)?.from
+    const destino = from ?? (result.isAdmin ? '/admin' : '/dashboard')
+    navigate(destino, { replace: true })
   }
 
   return (

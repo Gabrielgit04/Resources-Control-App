@@ -1,12 +1,10 @@
 import { supabase } from '@/server/supabase.service'
 import { isFreeText, isTextOnly } from '@/lib/validation'
+import type { InterestPeriod } from './Create.Account'
 
-export type AccountType = 'payable' | 'receivable'
-export type InterestPeriod = 'weekly' | 'monthly'
-
-export async function CreateAccount(data: {
+export async function UpdateAccount(data: {
+  accountId: string
   userId: string
-  type: AccountType
   counterparty: string
   description: string
   amount: number
@@ -14,14 +12,15 @@ export async function CreateAccount(data: {
   interestRate?: number | null
   interestPeriod?: InterestPeriod | null
   currency?: string
+  paid?: number
 }) {
-  const { userId, type, counterparty, description, amount, dueDate, interestRate, interestPeriod, currency } = data
+  const { accountId, userId, counterparty, description, amount, dueDate, interestRate, interestPeriod, currency, paid } = data
 
+  if (!accountId) {
+    return { ok: false, error: 'Cuenta inválida.' }
+  }
   if (!userId) {
     return { ok: false, error: 'Usuario no autenticado.' }
-  }
-  if (type !== 'payable' && type !== 'receivable') {
-    return { ok: false, error: 'Tipo de cuenta inválido.' }
   }
   if (!counterparty || !counterparty.trim()) {
     return { ok: false, error: 'Agrega la contraparte.' }
@@ -38,6 +37,9 @@ export async function CreateAccount(data: {
   if (amount === undefined || amount === null || !Number.isFinite(amount) || amount <= 0) {
     return { ok: false, error: 'El monto debe ser mayor a cero.' }
   }
+  if (typeof paid === 'number' && amount < paid) {
+    return { ok: false, error: `El monto no puede ser menor a lo ya abonado (${paid}).` }
+  }
   if (interestRate !== null && interestRate !== undefined && (!Number.isFinite(interestRate) || interestRate < 0)) {
     return { ok: false, error: 'El interés no puede ser negativo.' }
   }
@@ -53,9 +55,7 @@ export async function CreateAccount(data: {
 
   const { data: row, error } = await supabase
     .from('accounts')
-    .insert({
-      user_id: userId,
-      type,
+    .update({
       counterparty: counterparty.trim(),
       description: description.trim(),
       amount,
@@ -64,6 +64,8 @@ export async function CreateAccount(data: {
       interest_rate: interestRate || 0,
       interest_period: interestRate && interestPeriod ? interestPeriod : null,
     })
+    .eq('id', accountId)
+    .eq('user_id', userId)
     .select()
     .single()
 

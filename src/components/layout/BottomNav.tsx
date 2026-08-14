@@ -1,12 +1,10 @@
 import { NavLink } from 'react-router-dom'
 import { Icon } from '@/components/Icon'
 import { BOTTOM_NAV_ITEMS } from '@/components/layout/navigation'
-import { useAuth } from '@/components/auth/auth-context'
-import { IsSuperAdmin } from '@/backend/services/Admin-Services/AdminUsers'
+import { useIsAdmin } from '@/hooks/use-is-admin'
 
 export function BottomNav() {
-  const { user } = useAuth()
-  const esAdmin = IsSuperAdmin(user?.id)
+  const esAdmin = useIsAdmin()
   const items = BOTTOM_NAV_ITEMS.filter((item) => !item.admin || esAdmin)
 
   return (

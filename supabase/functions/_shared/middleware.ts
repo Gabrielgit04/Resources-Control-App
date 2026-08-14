@@ -26,7 +26,32 @@ export function jsonResponse(body: unknown, status = 200): Response {
 }
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-const supabaseJwksUrl = Deno.env.get('SUPABASE_JWKS_URL') ?? ''
+
+/**
+ * Resuelve la URL del endpoint de JWKS sin depender de secrets que no existan.
+ * 1) Usa SUPABASE_JWKS_URL si está definida y es válida.
+ * 2) Deriva de SUPABASE_URL (endpoint estándar de Supabase).
+ * Nunca lanza: devuelve '' si no se puede construir una URL segura.
+ */
+function getJwksUrl(): string {
+  for (const candidate of [Deno.env.get('SUPABASE_JWKS_URL'), Deno.env.get('SUPABASE_JWKS')]) {
+    const raw = (candidate ?? '').trim()
+    if (!raw) continue
+    try {
+      return new URL(raw).href
+    } catch {
+      continue
+    }
+  }
+  try {
+    const base = (supabaseUrl || '').trim().replace(/\/+$/, '')
+    return new URL(`${base}/auth/v1/.well-known/jwks.json`).href
+  } catch {
+    return ''
+  }
+}
+
+const supabaseJwksUrl = getJwksUrl()
 
 const getJwks = supabaseJwksUrl ? createRemoteJWKSet(new URL(supabaseJwksUrl)) : null
 
@@ -38,7 +63,7 @@ export type AuthResult = { userId: string } | Response
  */
 export async function requireUser(request: Request): Promise<AuthResult> {
   if (!getJwks) {
-    return jsonResponse({ ok: false, error: 'Falta SUPABASE_JWKS_URL en el entorno' }, 500)
+    return jsonResponse({ ok: false, error: 'Falta SUPABASE_URL para resolver las JWKS del proyecto' }, 500)
   }
   const header = request.headers.get('authorization') ?? ''
   const token = header.startsWith('Bearer ') ? header.slice(7) : null
@@ -48,6 +73,7 @@ export async function requireUser(request: Request): Promise<AuthResult> {
   try {
     const { payload } = await jwtVerify(token, getJwks, {
       issuer: `${supabaseUrl}/auth/v1`,
+      audience: 'authenticated',
     })
     const userId = (payload as Record<string, unknown>).sub
     if (!userId || typeof userId !== 'string') {

@@ -3,7 +3,7 @@ import { Icon } from '@/components/Icon'
 import { NAV_ITEMS } from '@/components/layout/navigation'
 import { useAuth } from '@/components/auth/auth-context'
 import { useProfile } from '@/hooks/use-profile'
-import { IsSuperAdmin } from '@/backend/services/Admin-Services/AdminUsers'
+import { useIsAdmin } from '@/hooks/use-is-admin'
 
 export function Sidebar() {
   const { user } = useAuth()
@@ -11,7 +11,7 @@ export function Sidebar() {
   const nombre = profile?.name ?? (user?.user_metadata?.full_name as string | undefined) ?? 'Usuario'
   const avatar = profile?.avatar ?? (user?.user_metadata?.avatar_url as string | undefined) ?? ''
   const inicial = nombre.charAt(0).toUpperCase()
-  const esAdmin = IsSuperAdmin(user?.id)
+  const esAdmin = useIsAdmin()
   const items = NAV_ITEMS.filter((item) => !item.admin || esAdmin)
 
   return (

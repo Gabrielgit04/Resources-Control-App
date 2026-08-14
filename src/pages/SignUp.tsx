@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Icon } from '@/components/Icon'
 import { APP_NAME } from '@/config'
+import { isEmail, isStrongPassword, isTextOnly } from '@/lib/validation'
 import { RegisterUser, type RegisterUserResult } from '@/backend/services/Auth-Services/SignUp.Services'
 import type { Email } from '@/backend/utils/types'
 import { supabase } from '@/server/supabase.service'
@@ -22,6 +23,18 @@ export function SignUp() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
 
+    if (!isTextOnly(form.name)) {
+      toast.error('El nombre solo puede contener letras y espacios.')
+      return
+    }
+    if (!isEmail(form.email)) {
+      toast.error('Ingresa un correo electrónico válido.')
+      return
+    }
+    if (!isStrongPassword(form.password)) {
+      toast.error('La contraseña debe tener al menos 8 caracteres e incluir letras y números.')
+      return
+    }
     if (form.password !== form.passwordConfirmation) {
       toast.error('Las contraseñas no coinciden.')
       return

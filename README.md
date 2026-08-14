@@ -69,10 +69,9 @@ npm run build
 ```env
 VITE_SUPABASE_URL=            # URL de tu proyecto (pública)
 VITE_SUPABASE_ANON_KEY=       # anon key (pública)
-VITE_SUPERADMIN_USER_ID=      # UUID del superadmin (usada por el cliente)
 
-SUPABASE_JWKS_URL=            # para validar JWT en Edge Functions
-SUPERADMIN_USER_ID=           # UUID del superadmin (Edge Function admin-users)
+SUPERADMIN_USER_ID=           # UUID del superadmin (Edge Function admin-users, server-side)
+# SUPABASE_JWKS_URL opcional: las Edge Functions derivan las JWKS de SUPABASE_URL.
 ```
 
 ### Edge Functions (Supabase)
@@ -80,9 +79,8 @@ SUPERADMIN_USER_ID=           # UUID del superadmin (Edge Function admin-users)
 Las funciones se despliegan con la CLI de Supabase. Ejecuta antes de desplegar:
 
 ```bash
-supabase secrets set SUPABASE_URL=<url>
-supabase secrets set SUPABASE_JWKS_URL=<url>/auth/v1/.well-known/jwks.json
-supabase secrets set SUPABASE_SERVICE_ROLE_KEY=<service_role_key>
+# SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY y SUPABASE_JWKS
+# son auto-gestionadas por Supabase (no se definen manualmente).
 supabase secrets set SUPERADMIN_USER_ID=<tu_uuid>
 supabase secrets set CRON_SECRET=<secreto_aleatorio>
 supabase secrets set RESEND_API_KEY=<resend_key>
@@ -93,6 +91,8 @@ supabase secrets set REMINDER_FROM_EMAIL="G-Finances <tu@dominio.com>"
 supabase functions deploy admin-users --no-verify-jwt
 supabase functions deploy send-reminders --no-verify-jwt
 ```
+
+> **Endurecimiento:** el build de producción inyecta una `Content-Security-Policy` estricta (vía `vite.config.ts`), y la Edge Function `admin-users` registra en `public.admin_audit_log` los accesos denegados y borrados de usuarios (migración `20260814120000_admin_audit_log.sql`).
 
 > **Aviso:** las migraciones de `supabase/migrations/` contienen el esquema de la BD y están excluidas de git. Aplícalas en tu proyecto con la CLI de Supabase antes de usar la app; el secret del cron se parametriza por variables de entorno, nunca se commitea.
 

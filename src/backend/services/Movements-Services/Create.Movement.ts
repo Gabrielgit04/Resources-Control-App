@@ -1,4 +1,5 @@
 import { supabase } from '@/server/supabase.service'
+import { isFreeText } from '@/lib/validation'
 import type { UserMovements } from '@/backend/utils/types'
 
 export async function CreateMovement(movementData: UserMovements) {
@@ -7,11 +8,14 @@ export async function CreateMovement(movementData: UserMovements) {
   if (!userId) {
     return { ok: false, error: 'Usuario no autenticado.' }
   }
-  if (!mount || mount <= 0) {
+  if (mount === undefined || mount === null || !Number.isFinite(mount) || mount <= 0) {
     return { ok: false, error: 'El monto debe ser mayor a cero.' }
   }
   if (!description || !description.trim()) {
     return { ok: false, error: 'Agrega una descripción.' }
+  }
+  if (!isFreeText(description)) {
+    return { ok: false, error: 'La descripción contiene caracteres no permitidos.' }
   }
   if (type !== 'ingreso' && type !== 'egreso') {
     return { ok: false, error: 'Tipo de movimiento inválido.' }

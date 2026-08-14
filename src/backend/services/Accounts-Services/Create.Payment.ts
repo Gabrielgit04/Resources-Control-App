@@ -6,7 +6,7 @@ export async function CreatePayment(data: { accountId: string; amount: number; n
   if (!accountId) {
     return { ok: false, error: 'Cuenta inválida.' }
   }
-  if (!amount || amount <= 0) {
+  if (amount === undefined || amount === null || !Number.isFinite(amount) || amount <= 0) {
     return { ok: false, error: 'El monto debe ser mayor a cero.' }
   }
 

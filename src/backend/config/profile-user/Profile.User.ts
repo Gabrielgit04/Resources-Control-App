@@ -1,4 +1,5 @@
 import { supabase } from '@/server/supabase.service'
+import { isEmail, isPhone, isTextOnly } from '@/lib/validation'
 import type { Email, UserProfile } from '@/backend/utils/types'
 
 export async function GetUserProfile(
@@ -32,6 +33,10 @@ export async function UpdateUserPhone(
   userId: string,
   phone: string
 ): Promise<{ ok: true; data: Pick<UserProfile, 'phone'> } | { ok: false; error: string }> {
+  if (!isPhone(phone)) {
+    return { ok: false, error: 'Ingresa un número de teléfono válido.' }
+  }
+
   const { error: authError } = await supabase.auth.updateUser({ data: { phone } })
   if (authError) {
     return { ok: false, error: authError.message }
@@ -53,6 +58,10 @@ export async function UpdateUserName(
   userId: string,
   name: string
 ): Promise<{ ok: true; data: Pick<UserProfile, 'name'> } | { ok: false; error: string }> {
+  if (!isTextOnly(name)) {
+    return { ok: false, error: 'El nombre solo puede contener letras y espacios.' }
+  }
+
   const { error: authError } = await supabase.auth.updateUser({ data: { full_name: name } })
   if (authError) {
     return { ok: false, error: authError.message }
@@ -73,6 +82,10 @@ export async function UpdateUserName(
 export async function UpdateUserEmail(
   email: string
 ): Promise<{ ok: true; data: { email: string } } | { ok: false; error: string }> {
+  if (!isEmail(email)) {
+    return { ok: false, error: 'Ingresa un correo electrónico válido.' }
+  }
+
   const { error } = await supabase.auth.updateUser({ email })
   if (error) {
     return { ok: false, error: error.message }

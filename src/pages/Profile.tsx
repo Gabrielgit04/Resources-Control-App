@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/switch'
 import { SelectRow } from '@/components/ui/select'
 import { useAuth } from '@/components/auth/auth-context'
 import { useProfile } from '@/hooks/use-profile'
+import { isEmail, isPhone, isPositiveNumber, isTextOnly } from '@/lib/validation'
 import { CURRENCIES, type CurrencyCode } from '@/lib/currency'
 import { GetCurrencySettings } from '@/backend/services/Currency-Services/Get.CurrencySettings'
 import { UpsertCurrencySettings } from '@/backend/services/Currency-Services/Upsert.CurrencySettings'
@@ -144,12 +145,11 @@ export function Profile() {
       if (c.value === conversionBase) continue
       const raw = ratesInput[c.value]?.trim()
       if (raw === undefined || raw === '') continue
-      const num = Number.parseFloat(raw)
-      if (Number.isNaN(num) || num <= 0) {
-        toast.error(`Ingresa una tasa válida para ${c.value}.`)
+      if (!isPositiveNumber(raw)) {
+        toast.error(`Ingresa una tasa válida para ${c.value} (mayor a cero).`)
         return
       }
-      rates[c.value] = num
+      rates[c.value] = Number(raw)
     }
     setSavingCurrency(true)
     const result = await UpsertCurrencySettings({
@@ -207,6 +207,10 @@ export function Profile() {
       toast.error('Ingresa un número de teléfono.')
       return
     }
+    if (!isPhone(valor)) {
+      toast.error('Ingresa un número de teléfono válido (solo números, + y espacios).')
+      return
+    }
 
     setSavingPhone(true)
     const result = await updatePhone(valor)
@@ -227,6 +231,10 @@ export function Profile() {
       toast.error('Ingresa un nombre.')
       return
     }
+    if (!isTextOnly(valor)) {
+      toast.error('El nombre solo puede contener letras y espacios.')
+      return
+    }
 
     setSavingName(true)
     const result = await updateName(valor)
@@ -245,6 +253,10 @@ export function Profile() {
     const valor = emailInput.trim()
     if (!valor) {
       toast.error('Ingresa un correo electrónico.')
+      return
+    }
+    if (!isEmail(valor)) {
+      toast.error('Ingresa un correo electrónico válido.')
       return
     }
 

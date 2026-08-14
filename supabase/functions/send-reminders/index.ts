@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { handleCors, jsonResponse, rateLimit, requireUser, verifyCronSecret } from '../_shared/middleware.ts'
+import { handleCors, corsHeaders, jsonResponse, rateLimit, requireUser, verifyCronSecret } from '../_shared/middleware.ts'
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
 const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -87,6 +87,11 @@ function buildHtml(list: any[]): string {
 }
 
 Deno.serve(async (req) => {
+  // Preflight CORS: respuesta inmediata antes de cualquier lógica.
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { status: 204, headers: corsHeaders })
+  }
+
   const cors = handleCors(req)
   if (cors) return cors
 

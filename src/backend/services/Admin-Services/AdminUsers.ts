@@ -1,7 +1,5 @@
 import { supabase } from '@/server/supabase.service'
 
-const ADMIN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-users`
-
 export interface AdminUser {
   id: string
   email: string
@@ -18,36 +16,70 @@ export interface ListUsersResult {
   data?: { usuarios: AdminUser[] }
 }
 
-async function call(path: string, init?: RequestInit) {
-  const { data } = await supabase.auth.getSession()
-  const token = data.session?.access_token
-  const res = await fetch(`${ADMIN_URL}${path}`, {
-    ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...init?.headers,
-    },
-  })
-  return res.json() as Promise<{ ok: boolean; error?: string; data?: { usuarios: AdminUser[] } }>
+interface AdminUserRow {
+  id: string
+  email: string
+  name: string
+  phone: string
+  created_at: string
+  last_sign_in_at: string | null
+  confirmed: boolean
+}
+
+function mapRow(u: AdminUserRow): AdminUser {
+  return {
+    id: u.id,
+    email: u.email ?? '',
+    name: u.name ?? u.email?.split('@')[0] ?? '',
+    phone: u.phone ?? '',
+    createdAt: u.created_at,
+    lastSignInAt: u.last_sign_in_at,
+    confirmed: Boolean(u.confirmed),
+  }
 }
 
 /** Lista los usuarios de la app (solo superadmin). */
 export async function ListUsers(): Promise<ListUsersResult> {
-  return call('')
+  const { data, error } = await supabase.rpc('admin_list_users')
+  if (error) return { ok: false, error: error.message }
+  return { ok: true, data: { usuarios: ((data ?? []) as AdminUserRow[]).map(mapRow) } }
 }
 
 /** Elimina un usuario y todo su historial (solo superadmin). */
 export async function DeleteUser(userId: string): Promise<{ ok: boolean; error?: string }> {
-  const res = await call('', {
-    method: 'POST',
-    body: JSON.stringify({ action: 'delete', userId }),
-  })
-  return { ok: res.ok, error: res.error }
+  const { error } = await supabase.rpc('admin_delete_user', { p_user_id: userId })
+  return error ? { ok: false, error: error.message } : { ok: true }
 }
 
-/** ¿El usuario actual es el superadmin configurado? */
-export function IsSuperAdmin(userId?: string): boolean {
-  const id = import.meta.env.VITE_SUPERADMIN_USER_ID as string | undefined
-  return Boolean(id && userId && userId === id)
+/** ¿El usuario actual es el superadmin? Lo decide Postgres (server-side). */
+let isAdminCache: Promise<boolean> | null = null
+let isAdminCacheUserId: string | null = null
+
+/** Invalida la caché de verificación de superadmin (al cerrar sesión). */
+export function clearAdminCache(): void {
+  isAdminCache = null
+  isAdminCacheUserId = null
+}
+
+export async function IsSuperAdmin(): Promise<boolean> {
+  const { data } = await supabase.auth.getSession()
+  const userId = data.session?.user?.id ?? null
+  if (!userId) return false
+
+  if (isAdminCacheUserId === userId && isAdminCache) {
+    return isAdminCache
+  }
+
+  const pending = (async () => {
+    const { data: res, error } = await supabase.rpc('is_super_admin')
+    if (error) throw new Error(error.message)
+    return (res as boolean) === true
+  })().catch((err) => {
+    clearAdminCache()
+    throw err
+  })
+
+  isAdminCache = pending
+  isAdminCacheUserId = userId
+  return pending
 }

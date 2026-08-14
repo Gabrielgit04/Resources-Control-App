@@ -5,6 +5,7 @@ export interface AuthContextValue {
   user: User | null
   session: Session | null
   loading: boolean
+  isAdmin: boolean
   signOut: () => Promise<void>
 }
 

@@ -5,7 +5,7 @@
 // `on delete cascade` limpian movimientos, cuentas y perfil del usuario.
 // Desplegar con: supabase functions deploy admin-users --no-verify-jwt
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { handleCors, jsonResponse, rateLimit, requireUser } from '../_shared/middleware.ts'
+import { handleCors, corsHeaders, jsonResponse, rateLimit, requireUser } from '../_shared/middleware.ts'
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
 const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -14,7 +14,24 @@ const supabase = createClient(supabaseUrl, serviceRoleKey)
 
 const PAGE_SIZE = 100
 
+/**
+ * Registra eventos de auditoría (service role). Si la tabla `admin_audit_log`
+ * aún no existe (migración pendiente), solo deja rastro en los logs de la función.
+ */
+async function audit(userId: string, action: string, detail: string): Promise<void> {
+  try {
+    await supabase.from('admin_audit_log').insert({ user_id: userId, action, detail })
+  } catch {
+    // Tabla ausente → se ignora; los console.* de la función siguen registrando el evento.
+  }
+}
+
 Deno.serve(async (req) => {
+  // Preflight CORS: respuesta inmediata antes de cualquier lógica.
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { status: 204, headers: corsHeaders })
+  }
+
   const cors = handleCors(req)
   if (cors) return cors
 
@@ -25,7 +42,18 @@ Deno.serve(async (req) => {
   const auth = await requireUser(req)
   if (auth instanceof Response) return auth
 
+  // Consulta para el cliente: ¿el usuario autenticado es superadmin?
+  // La UUID del superadmin se valida aquí (server-side), nunca viaja al bundle.
+  if (req.method === 'GET') {
+    const url = new URL(req.url)
+    if (url.pathname.endsWith('/is-admin')) {
+      return jsonResponse({ ok: true, isAdmin: Boolean(superadminId && auth.userId === superadminId) })
+    }
+  }
+
   if (!superadminId || auth.userId !== superadminId) {
+    console.warn(`[admin-users] Acceso denegado para ${auth.userId} en ${req.url}`)
+    await audit(auth.userId, 'denied', req.url)
     return jsonResponse({ ok: false, error: 'Acceso denegado' }, 403)
   }
 
@@ -70,6 +98,8 @@ Deno.serve(async (req) => {
       if (error) {
         return jsonResponse({ ok: false, error: error.message }, 500)
       }
+      console.info(`[admin-users] ${auth.userId} eliminó al usuario ${userId}`)
+      await audit(auth.userId, 'delete_user', userId)
       return jsonResponse({ ok: true })
     }
 

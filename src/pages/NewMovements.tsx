@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { Icon } from '@/components/Icon'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useAuth } from '@/components/auth/auth-context'
+import { isFreeText, isPositiveNumber } from '@/lib/validation'
 import { CreateMovement } from '@/backend/services/Movements-Services/Create.Movement'
 import type { UserMovements } from '@/backend/utils/types'
 
@@ -40,13 +41,13 @@ export function NuevoMovimiento() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
 
-    const monto = Number.parseFloat(amount)
-    if (Number.isNaN(monto) || monto <= 0) {
-      toast.error('Ingresa un monto válido mayor a cero.')
+    if (!isPositiveNumber(amount)) {
+      toast.error('Ingresa un monto válido mayor a cero (hasta 2 decimales).')
       return
     }
-    if (!notes.trim()) {
-      toast.error('Agrega una descripción.')
+    const monto = Number(amount)
+    if (!isFreeText(notes)) {
+      toast.error('Agrega una descripción válida.')
       return
     }
     if (!user) {

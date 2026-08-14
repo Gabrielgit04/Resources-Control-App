@@ -5,9 +5,12 @@ import { EmptyState } from '@/components/EmptyState'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { useAuth } from '@/components/auth/auth-context'
+import { isFreeText, isPositiveNumber, isRate, isTextOnly } from '@/lib/validation'
 import { CreateAccount, type AccountType, type InterestPeriod } from '@/backend/services/Accounts-Services/Create.Account'
 import { SelectAccounts } from '@/backend/services/Accounts-Services/Select.Accounts'
 import { CreatePayment } from '@/backend/services/Accounts-Services/Create.Payment'
+import { UpdateAccount } from '@/backend/services/Accounts-Services/Update.Account'
+import { DeleteAccount } from '@/backend/services/Accounts-Services/Delete.Account'
 import { SelectPayments } from '@/backend/services/Accounts-Services/Select.Payments'
 import { CreateMovement } from '@/backend/services/Movements-Services/Create.Movement'
 import type { UserMovements } from '@/backend/utils/types'
@@ -111,7 +114,20 @@ export function Accounts() {
   const [registrando, setRegistrando] = useState(false)
   const [creando, setCreando] = useState(false)
   const [guardandoCuenta, setGuardandoCuenta] = useState(false)
+  const [editando, setEditando] = useState<Cuenta | null>(null)
+  const [guardandoEdicion, setGuardandoEdicion] = useState(false)
+  const [eliminando, setEliminando] = useState<Cuenta | null>(null)
+  const [eliminandoId, setEliminandoId] = useState<string | null>(null)
   const [form, setForm] = useState({
+    contraparte: '',
+    concepto: '',
+    monto: '',
+    vencimiento: '',
+    interes: '',
+    periodo: 'monthly' as InterestPeriod,
+    currency: 'USD',
+  })
+  const [formEditar, setFormEditar] = useState({
     contraparte: '',
     concepto: '',
     monto: '',
@@ -223,11 +239,11 @@ export function Accounts() {
 
   const registrarAbono = async () => {
     if (!abonando || !user) return
-    const cantidad = Number.parseFloat(montoAbono)
-    if (Number.isNaN(cantidad) || cantidad <= 0) {
-      toast.error('Ingresa un monto válido mayor a cero.')
+    if (!isPositiveNumber(montoAbono)) {
+      toast.error('Ingresa un monto válido mayor a cero (hasta 2 decimales).')
       return
     }
+    const cantidad = Number(montoAbono)
     setRegistrando(true)
     const result = await CreatePayment({ accountId: abonando.id, amount: cantidad })
     if (!result.ok) {
@@ -272,34 +288,37 @@ export function Accounts() {
 
   const registrarCuenta = async () => {
     if (!user) return
-    const monto = Number.parseFloat(form.monto)
-    if (!form.contraparte.trim()) {
-      toast.error('Agrega la contraparte.')
+    const contraparte = form.contraparte.trim()
+    const concepto = form.concepto.trim()
+    if (!isTextOnly(contraparte)) {
+      toast.error('La contraparte solo puede contener letras y espacios.')
       return
     }
-    if (!form.concepto.trim()) {
-      toast.error('Agrega un concepto.')
+    if (!isFreeText(concepto)) {
+      toast.error('Agrega un concepto válido.')
       return
     }
-    if (Number.isNaN(monto) || monto <= 0) {
-      toast.error('Ingresa un monto válido mayor a cero.')
+    if (!isPositiveNumber(form.monto)) {
+      toast.error('Ingresa un monto válido mayor a cero (hasta 2 decimales).')
       return
     }
-    const interes = Number.parseFloat(form.interes)
-    if (form.interes.trim() !== '' && (Number.isNaN(interes) || interes < 0)) {
-      toast.error('Ingresa un porcentaje de interés válido.')
+    const monto = Number(form.monto)
+    const tieneInteres = form.interes.trim() !== ''
+    if (tieneInteres && !isRate(form.interes)) {
+      toast.error('Ingresa un porcentaje de interés válido (0 a 100).')
       return
     }
+    const interes = tieneInteres ? Number(form.interes) : null
     setGuardandoCuenta(true)
     const result = await CreateAccount({
       userId: user.id,
       type: tipo,
-      counterparty: form.contraparte,
-      description: form.concepto,
+      counterparty: contraparte,
+      description: concepto,
       amount: monto,
       dueDate: form.vencimiento || null,
-      interestRate: form.interes.trim() === '' ? null : interes,
-      interestPeriod: form.interes.trim() === '' ? null : form.periodo,
+      interestRate: interes,
+      interestPeriod: interes === null ? null : form.periodo,
       currency: form.currency,
     })
     setGuardandoCuenta(false)
@@ -318,6 +337,81 @@ export function Accounts() {
       periodo: 'monthly',
       currency: 'USD',
     })
+    cargar()
+  }
+
+  const abrirEdicion = (c: Cuenta) => {
+    setEditando(c)
+    setFormEditar({
+      contraparte: c.contraparte,
+      concepto: c.concepto,
+      monto: String(c.monto),
+      vencimiento: c.vencimiento,
+      interes: c.interesRate > 0 ? String(c.interesRate) : '',
+      periodo: c.interesPeriod ?? 'monthly',
+      currency: c.currency,
+    })
+  }
+
+  const guardarEdicion = async () => {
+    if (!editando || !user) return
+    const contraparte = formEditar.contraparte.trim()
+    const concepto = formEditar.concepto.trim()
+    if (!isTextOnly(contraparte)) {
+      toast.error('La contraparte solo puede contener letras y espacios.')
+      return
+    }
+    if (!isFreeText(concepto)) {
+      toast.error('Agrega un concepto válido.')
+      return
+    }
+    if (!isPositiveNumber(formEditar.monto)) {
+      toast.error('Ingresa un monto válido mayor a cero (hasta 2 decimales).')
+      return
+    }
+    const monto = Number(formEditar.monto)
+    const tieneInteres = formEditar.interes.trim() !== ''
+    if (tieneInteres && !isRate(formEditar.interes)) {
+      toast.error('Ingresa un porcentaje de interés válido (0 a 100).')
+      return
+    }
+    const interes = tieneInteres ? Number(formEditar.interes) : null
+    setGuardandoEdicion(true)
+    const result = await UpdateAccount({
+      accountId: editando.id,
+      userId: user.id,
+      counterparty: contraparte,
+      description: concepto,
+      amount: monto,
+      dueDate: formEditar.vencimiento || null,
+      interestRate: interes,
+      interestPeriod: interes === null ? null : formEditar.periodo,
+      currency: formEditar.currency,
+      paid: editando.abonado,
+    })
+    setGuardandoEdicion(false)
+    if (!result.ok) {
+      toast.error(result.error ?? 'No se pudo actualizar la cuenta.')
+      return
+    }
+    toast.success('Cuenta actualizada.')
+    setEditando(null)
+    setPagos({})
+    cargar()
+  }
+
+  const confirmarEliminar = async () => {
+    if (!eliminando || !user) return
+    setEliminandoId(eliminando.id)
+    const result = await DeleteAccount({ accountId: eliminando.id, userId: user.id })
+    setEliminandoId(null)
+    if (!result.ok) {
+      toast.error(result.error ?? 'No se pudo eliminar la cuenta.')
+      return
+    }
+    toast.success('Cuenta eliminada.')
+    setEliminando(null)
+    setPagos({})
     cargar()
   }
 
@@ -484,7 +578,7 @@ export function Accounts() {
                     {estado}
                   </span>
                 </div>
-                <div className="flex items-center md:justify-end">
+                <div className="flex items-center md:justify-end gap-2">
                   {!saldada && (
                     <button
                       className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-primary text-on-primary hover:bg-primary/90"
@@ -494,6 +588,26 @@ export function Accounts() {
                       {esPagar ? 'Abonar' : 'Registrar cobro'}
                     </button>
                   )}
+                  <button
+                    className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors"
+                    onClick={() => abrirEdicion(c)}
+                    aria-label="Editar cuenta"
+                    title="Editar cuenta"
+                  >
+                    <Icon name="edit" size={18} />
+                  </button>
+                  <button
+                    className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-on-surface-variant hover:bg-error/10 hover:text-error transition-colors"
+                    onClick={() => setEliminando(c)}
+                    aria-label="Eliminar cuenta"
+                    title="Eliminar cuenta"
+                  >
+                    {eliminandoId === c.id ? (
+                      <Icon name="progress_activity" size={18} className="animate-spin" />
+                    ) : (
+                      <Icon name="delete" size={18} />
+                    )}
+                  </button>
                 </div>
               </div>
 
@@ -812,6 +926,202 @@ export function Accounts() {
                 onClick={registrarCuenta}
               >
                 Crear cuenta
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Editar Cuenta Modal */}
+      {editando && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setEditando(null)}
+        >
+          <div
+            className="w-full max-w-sm bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_24px_60px_rgba(11,28,48,0.25)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="font-display font-semibold text-xl text-on-surface mb-1">
+              Editar cuenta por {esPagar ? 'pagar' : 'cobrar'}
+            </h3>
+            <p className="text-sm text-on-surface-variant mb-5">
+              {editando.contraparte} · {editando.concepto}
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-on-surface mb-1.5" htmlFor="editar-contraparte">
+                  Contraparte
+                </label>
+                <input
+                  autoFocus
+                  className="block w-full pl-3 pr-3 py-2.5 bg-surface-container-low border border-outline-variant/30 rounded-lg text-on-surface focus:ring-1 focus:ring-primary focus:border-primary transition-all"
+                  id="editar-contraparte"
+                  placeholder="Proveedor o cliente"
+                  type="text"
+                  value={formEditar.contraparte}
+                  onChange={(e) => setFormEditar({ ...formEditar, contraparte: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-on-surface mb-1.5" htmlFor="editar-concepto">
+                  Concepto
+                </label>
+                <input
+                  className="block w-full pl-3 pr-3 py-2.5 bg-surface-container-low border border-outline-variant/30 rounded-lg text-on-surface focus:ring-1 focus:ring-primary focus:border-primary transition-all"
+                  id="editar-concepto"
+                  placeholder="Descripción de la cuenta"
+                  type="text"
+                  value={formEditar.concepto}
+                  onChange={(e) => setFormEditar({ ...formEditar, concepto: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-on-surface mb-1.5" htmlFor="editar-monto">
+                    Monto
+                  </label>
+                  <input
+                    className="block w-full pl-3 pr-3 py-2.5 bg-surface-container-low border border-outline-variant/30 rounded-lg text-on-surface focus:ring-1 focus:ring-primary focus:border-primary transition-all"
+                    id="editar-monto"
+                    min="0.01"
+                    placeholder="0.00"
+                    step="0.01"
+                    type="number"
+                    value={formEditar.monto}
+                    onChange={(e) => setFormEditar({ ...formEditar, monto: e.target.value })}
+                  />
+                  {editando.abonado > 0 && (
+                    <p className="text-xs text-on-surface-variant mt-1">
+                      Ya abonado {fmt(editando.abonado, editando.currency)} — el monto no puede ser menor.
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-on-surface mb-1.5">Moneda</label>
+                  <Select value={formEditar.currency} onValueChange={(v) => setFormEditar({ ...formEditar, currency: v })}>
+                    <SelectTrigger className="w-full h-[42px] rounded-lg border border-outline-variant/30 bg-surface-container-low px-3 text-sm font-medium text-on-surface shadow-none hover:bg-surface-container focus:ring-1 focus:ring-primary">
+                      <SelectValue placeholder="Moneda" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      <SelectItem value="USD">USD ($)</SelectItem>
+                      <SelectItem value="EUR">EUR (€)</SelectItem>
+                      <SelectItem value="VES">VES (Bs)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-on-surface mb-1.5" htmlFor="editar-vencimiento">
+                  Vencimiento
+                </label>
+                <input
+                  className="block w-full pl-3 pr-3 py-2.5 bg-surface-container-low border border-outline-variant/30 rounded-lg text-on-surface focus:ring-1 focus:ring-primary focus:border-primary transition-all"
+                  id="editar-vencimiento"
+                  type="date"
+                  value={formEditar.vencimiento}
+                  onChange={(e) => setFormEditar({ ...formEditar, vencimiento: e.target.value })}
+                />
+              </div>
+              {!esPagar && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-on-surface mb-1.5" htmlFor="editar-interes">
+                      Interés (%) <span className="text-on-surface-variant font-normal">(opcional)</span>
+                    </label>
+                    <input
+                      className="block w-full pl-3 pr-3 py-2.5 bg-surface-container-low border border-outline-variant/30 rounded-lg text-on-surface focus:ring-1 focus:ring-primary focus:border-primary transition-all"
+                      id="editar-interes"
+                      min="0"
+                      placeholder="0.00"
+                      step="0.01"
+                      type="number"
+                      value={formEditar.interes}
+                      onChange={(e) => setFormEditar({ ...formEditar, interes: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-on-surface mb-1.5">Periodo del interés</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          formEditar.periodo === 'weekly'
+                            ? 'bg-primary-container text-on-primary-container'
+                            : 'bg-surface-container-low text-on-surface-variant hover:text-on-surface'
+                        }`}
+                        type="button"
+                        onClick={() => setFormEditar({ ...formEditar, periodo: 'weekly' })}
+                      >
+                        Semanal
+                      </button>
+                      <button
+                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          formEditar.periodo === 'monthly'
+                            ? 'bg-primary-container text-on-primary-container'
+                            : 'bg-surface-container-low text-on-surface-variant hover:text-on-surface'
+                        }`}
+                        type="button"
+                        onClick={() => setFormEditar({ ...formEditar, periodo: 'monthly' })}
+                      >
+                        Mensual
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                className="px-4 py-2 rounded-lg text-sm font-medium text-on-surface-variant hover:bg-surface-container transition-colors"
+                onClick={() => setEditando(null)}
+              >
+                Cancelar
+              </button>
+              <button
+                className="px-5 py-2 rounded-lg text-sm font-semibold bg-primary text-on-primary hover:bg-primary/90 transition-colors disabled:opacity-60"
+                disabled={guardandoEdicion}
+                onClick={guardarEdicion}
+              >
+                Guardar cambios
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Eliminar Cuenta Modal */}
+      {eliminando && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setEliminando(null)}
+        >
+          <div
+            className="w-full max-w-sm bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_24px_60px_rgba(11,28,48,0.25)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="font-display font-semibold text-xl text-on-surface mb-2">¿Eliminar cuenta?</h3>
+            <p className="text-sm text-on-surface-variant mb-2">
+              <span className="font-medium text-on-surface">{eliminando.contraparte}</span> · {eliminando.concepto}
+            </p>
+            <p className="text-sm text-on-surface-variant">
+              Se eliminará la cuenta y su historial de abonos. Esta acción no se puede deshacer.
+            </p>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                className="px-4 py-2 rounded-lg text-sm font-medium text-on-surface-variant hover:bg-surface-container transition-colors"
+                onClick={() => setEliminando(null)}
+              >
+                Cancelar
+              </button>
+              <button
+                className="px-5 py-2 rounded-lg text-sm font-semibold bg-error text-on-error hover:bg-error/90 transition-colors disabled:opacity-60"
+                disabled={eliminandoId === eliminando.id}
+                onClick={confirmarEliminar}
+              >
+                {eliminandoId === eliminando.id ? 'Eliminando…' : 'Eliminar'}
               </button>
             </div>
           </div>
