@@ -13,6 +13,7 @@ import { Login } from '@/pages/Login'
 import { NuevoMovimiento } from '@/pages/NewMovements'
 import { Profile } from '@/pages/Profile'
 import { RecoverPassword } from '@/pages/RecoverPassword'
+import { ResetPassword } from '@/pages/ResetPassword'
 import { Reports } from '@/pages/Reports'
 import { SignUp } from '@/pages/SignUp'
 
@@ -25,6 +26,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<SignUp />} />
           <Route path="/forgot-password" element={<RecoverPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route
             path="/profile"
             element={

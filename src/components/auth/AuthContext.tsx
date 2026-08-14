@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { toast } from 'sonner'
 import type { Session, User } from '@supabase/supabase-js'
-import { supabase, setUnauthorizedHandler } from '@/server/supabase.service'
+import { supabase, clearPersistedSession, setUnauthorizedHandler } from '@/server/supabase.service'
 import { AuthContext } from '@/components/auth/auth-context'
-import { IsSuperAdmin, clearAdminCache } from '@/backend/services/Admin-Services/AdminUsers'
+import { IsSuperAdmin, IsAccountSuspended, clearAdminCache } from '@/backend/services/Admin-Services/AdminUsers'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
@@ -41,9 +41,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     supabase.auth.getSession().then(({ data }) => {
       if (!mounted) return
-      setSession(data.session)
-      setUser(data.session?.user ?? null)
+      const s = data.session
+      setSession(s)
+      setUser(s?.user ?? null)
       setLoading(false)
+      if (s?.user) {
+        IsAccountSuspended()
+          .then((suspended) => {
+            if (mounted && suspended) {
+              void supabase.auth.signOut()
+              clearPersistedSession()
+              toast.error('Tu cuenta ha sido suspendida.')
+            }
+          })
+          .catch((err) => console.error('[AuthProvider] Falló el chequeo de suspensión:', err))
+      }
     })
 
     const { data: subscription } = supabase.auth.onAuthStateChange((_event, newSession) => {
@@ -63,6 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       supabase.auth.getSession().then(({ data }) => {
         if (!data.session) return
         void supabase.auth.signOut()
+        clearPersistedSession()
         toast.error('Tu sesión expiró. Vuelve a iniciar sesión.')
       })
     })
@@ -70,6 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut()
+    clearPersistedSession()
     clearAdminCache()
     setSession(null)
     setUser(null)

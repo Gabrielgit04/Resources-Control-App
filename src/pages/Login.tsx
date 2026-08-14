@@ -10,6 +10,11 @@ import {
   getLoginState,
   recordLoginFailure,
 } from '@/backend/services/Auth-Services/LocalLoginGuard'
+import {
+  isRememberMe,
+  prepareSignInStorage,
+  setRememberMe as setRememberMePref,
+} from '@/server/supabase.service'
 
 export function Login() {
   const navigate = useNavigate()
@@ -17,8 +22,9 @@ export function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [rememberMe, setRememberMe] = useState(false)
+  const [rememberMe, setRememberMe] = useState(isRememberMe)
   const [loading, setLoading] = useState(false)
+  const [suspended, setSuspended] = useState<string | null>(null)
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -31,10 +37,15 @@ export function Login() {
       return
     }
 
+    prepareSignInStorage(rememberMe)
     const result = await SignInUser({ email, password })
 
     if (!result.ok) {
       setLoading(false)
+      if (result.suspended) {
+        setSuspended(result.error)
+        return
+      }
       const after = recordLoginFailure(email)
       if (after.locked) {
         toast.error(
@@ -48,6 +59,7 @@ export function Login() {
 
     clearLoginState(email)
     setLoading(false)
+    setSuspended(null)
     toast.success('Sesión iniciada. ¡Bienvenido de nuevo!')
 
     const from = (location.state as { from?: string } | null)?.from
@@ -77,6 +89,20 @@ export function Login() {
 
           {/* Form */}
           <form className="space-y-6" onSubmit={handleSubmit}>
+            {suspended && (
+              <div
+                className="flex items-start gap-3 rounded-lg border border-error/30 bg-error/10 px-4 py-3 text-sm text-error"
+                role="alert"
+              >
+                <Icon name="block" size={20} className="mt-0.5 shrink-0" />
+                <div>
+                  <p className="font-label font-semibold">{suspended}</p>
+                  <p className="mt-1 text-on-surface-variant">
+                    Si crees que es un error, contacta con el administrador de la app.
+                  </p>
+                </div>
+              </div>
+            )}
             <div className="space-y-4">
               {/* Email Input */}
               <div>
@@ -96,7 +122,10 @@ export function Login() {
                     required
                     type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value)
+                      if (suspended) setSuspended(null)
+                    }}
                   />
                 </div>
               </div>
@@ -149,7 +178,11 @@ export function Login() {
                 name="remember-me"
                 type="checkbox"
                 checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
+                onChange={(e) => {
+                  const checked = e.target.checked
+                  setRememberMe(checked)
+                  setRememberMePref(checked)
+                }}
               />
               <label className="ml-2 block font-label text-sm text-on-surface-variant" htmlFor="remember-me">
                 Recuérdame

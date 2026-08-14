@@ -8,7 +8,7 @@ interface SignInData {
 
 export type SignInResult =
     | { ok: true; data: Awaited<ReturnType<typeof supabase.auth.signInWithPassword>>['data']; isAdmin: boolean }
-    | { ok: false; error: string }
+    | { ok: false; error: string; suspended?: boolean }
 
 export async function SignInUser(userData: SignInData): Promise<SignInResult> {
     const { email, password } = userData
@@ -23,7 +23,13 @@ export async function SignInUser(userData: SignInData): Promise<SignInResult> {
         })
 
         if (signInError) {
-            return { ok: false, error: "Verifica tu email o contraseña, e inténtalo de nuevo." }
+            // GoTrue devuelve "User is banned" (código `banned`) para cuentas suspendidas.
+            const suspended = signInError.code === 'banned' || /banned/i.test(signInError.message)
+            return {
+                ok: false,
+                error: 'Tu cuenta ha sido suspendida temporalmente.',
+                suspended,
+            }
         }
 
         const userId = data.user?.id

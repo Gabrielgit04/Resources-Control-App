@@ -4,8 +4,8 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Icon } from '@/components/Icon'
 import { BottomNav } from '@/components/layout/BottomNav'
-import { Switch } from '@/components/ui/switch'
 import { SelectRow } from '@/components/ui/select'
+import { ChangePasswordForm } from '@/components/auth/ChangePasswordForm'
 import { useAuth } from '@/components/auth/auth-context'
 import { useProfile } from '@/hooks/use-profile'
 import { isEmail, isPhone, isPositiveNumber, isTextOnly } from '@/lib/validation'
@@ -85,10 +85,10 @@ export function Profile() {
       }).format(new Date(user.last_sign_in_at))
     : '—'
 
-  const [tfa, setTfa] = useState(true)
   const [phoneDialog, setPhoneDialog] = useState(false)
   const [nameDialog, setNameDialog] = useState(false)
   const [emailDialog, setEmailDialog] = useState(false)
+  const [passwordDialog, setPasswordDialog] = useState(false)
   const [phoneInput, setPhoneInput] = useState('')
   const [nameInput, setNameInput] = useState('')
   const [emailInput, setEmailInput] = useState('')
@@ -369,19 +369,14 @@ export function Profile() {
               Seguridad
             </h3>
             <div className="bg-surface-container-lowest rounded-xl shadow-[0_4px_24px_rgb(11,28,48,0.02)] border border-outline-variant/20 overflow-hidden">
-              <Row icon="lock" title="Cambiar contraseña" subtitle="Actualizada hace 3 meses" trailing="chevron" />
-              <div className="flex items-center justify-between p-4 hover:bg-surface-container-low transition-colors border-b border-outline-variant/10">
-                <div className="flex items-center space-x-4">
-                  <div className="w-10 h-10 rounded-full bg-surface flex items-center justify-center text-primary">
-                    <Icon name="verified_user" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-on-surface">Autenticación de dos factores</p>
-                    <p className="text-sm text-on-surface-variant">Seguridad reforzada de la cuenta</p>
-                  </div>
-                </div>
-                <Switch checked={tfa} onCheckedChange={setTfa} />
-              </div>            </div>
+              <Row
+                icon="lock"
+                title="Cambiar contraseña"
+                subtitle="Establece una contraseña nueva para tu cuenta"
+                trailing="chevron"
+                onClick={() => setPasswordDialog(true)}
+              />
+            </div>
           </section>
 
           {/* Preferences */}
@@ -649,6 +644,28 @@ export function Profile() {
                 Guardar
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Change Password Dialog */}
+      {passwordDialog && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setPasswordDialog(false)}
+        >
+          <div
+            className="w-full max-w-sm bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_24px_60px_rgba(11,28,48,0.25)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="font-display font-semibold text-xl text-on-surface mb-1">Cambiar contraseña</h3>
+            <p className="text-sm text-on-surface-variant mb-5">
+              Establece una contraseña nueva. Se cerrarán tus otras sesiones, pero esta se mantiene.
+            </p>
+            <ChangePasswordForm
+              successMessage="Contraseña actualizada."
+              onSuccess={() => setPasswordDialog(false)}
+            />
           </div>
         </div>
       )}

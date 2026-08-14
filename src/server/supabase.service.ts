@@ -6,6 +6,50 @@ let _supabase: SupabaseClient | null = null;
 /** Tiempo máximo (en ms) que una petición a Supabase puede tardar antes de abortarse. */
 export const SUPABASE_TIMEOUT_MS = 15000;
 
+/** Clave donde supabase-js guarda la sesión (por defecto en su storage). */
+export const AUTH_STORAGE_KEY = "supabase.auth.token";
+
+/** Clave donde guardamos la preferencia "Recuérdame" (siempre en localStorage). */
+export const REMEMBER_ME_KEY = "gfinances_remember_me";
+
+/** Preferencia "Recuérdame". Por defecto true (solo false si se marcó explícitamente). */
+export function isRememberMe(): boolean {
+  try {
+    return window.localStorage.getItem(REMEMBER_ME_KEY) !== "false";
+  } catch {
+    return true;
+  }
+}
+
+/** Persiste la preferencia "Recuérdame". */
+export function setRememberMe(enabled: boolean): void {
+  try {
+    window.localStorage.setItem(REMEMBER_ME_KEY, enabled ? "true" : "false");
+  } catch {
+    /* noop */
+  }
+}
+
+/** Limpia la sesión del storage que NO se va a usar al iniciar sesión. */
+export function prepareSignInStorage(rememberMe: boolean): void {
+  try {
+    const other = rememberMe ? window.sessionStorage : window.localStorage;
+    other.removeItem(AUTH_STORAGE_KEY);
+  } catch {
+    /* noop */
+  }
+}
+
+/** Borra la sesión persistida de ambos storages (seguro al cerrar sesión). */
+export function clearPersistedSession(): void {
+  try {
+    window.localStorage.removeItem(AUTH_STORAGE_KEY);
+    window.sessionStorage.removeItem(AUTH_STORAGE_KEY);
+  } catch {
+    /* noop */
+  }
+}
+
 /** fetch con timeout vía AbortController para que un Supabase lento no cuelgue el Worker. */
 function fetchWithTimeout(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
   const controller = new AbortController();
@@ -64,8 +108,23 @@ function getSupabase(): SupabaseClient {
     );
   }
 
+  // Adaptador de storage para "Recuérdame": elige localStorage o sessionStorage
+  // según la preferencia guardada, de modo que la sesión persista o no al cerrar el navegador.
+  const authStorage = (): Pick<Storage, "getItem" | "setItem" | "removeItem"> => {
+    const target = (): Storage => (isRememberMe() ? window.localStorage : window.sessionStorage);
+    return {
+      getItem: (key) => target().getItem(key),
+      setItem: (key, value) => target().setItem(key, value),
+      removeItem: (key) => target().removeItem(key),
+    };
+  };
+
   _supabase = createClient(supabaseUrl, supabaseKey, {
-    auth: { persistSession: true, autoRefreshToken: true },
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      storage: authStorage(),
+    },
     global: { fetch: fetchWithIntercept },
     db: { schema: "public" },
   });

@@ -4,7 +4,7 @@ import { Icon } from '@/components/Icon'
 import { EmptyState } from '@/components/EmptyState'
 import { useAuth } from '@/components/auth/auth-context'
 import { useIsAdmin } from '@/hooks/use-is-admin'
-import { DeleteUser, ListUsers, type AdminUser } from '@/backend/services/Admin-Services/AdminUsers'
+import { DeleteUser, ListUsers, SuspendUser, type AdminUser } from '@/backend/services/Admin-Services/AdminUsers'
 
 function formatFecha(iso: string | null): string {
   if (!iso) return '—'
@@ -24,6 +24,10 @@ export function Admin() {
   const [loading, setLoading] = useState(true)
   const [borrando, setBorrando] = useState<AdminUser | null>(null)
   const [procesando, setProcesando] = useState(false)
+  const [suspendiendo, setSuspendiendo] = useState<AdminUser | null>(null)
+  const [reactivando, setReactivando] = useState<AdminUser | null>(null)
+  const [razon, setRazon] = useState('')
+  const [procesandoSusp, setProcesandoSusp] = useState(false)
 
   const cargar = useCallback(async () => {
     setLoading(true)
@@ -51,6 +55,35 @@ export function Admin() {
     }
     toast.success(`Usuario ${borrando.email} eliminado.`)
     setBorrando(null)
+    cargar()
+  }
+
+  const confirmarSuspension = async () => {
+    if (!suspendiendo) return
+    setProcesandoSusp(true)
+    const res = await SuspendUser(suspendiendo.id, true, razon)
+    setProcesandoSusp(false)
+    if (!res.ok) {
+      toast.error(res.error ?? 'No se pudo suspender el usuario.')
+      return
+    }
+    toast.success(`Usuario ${suspendiendo.email} suspendido.`)
+    setSuspendiendo(null)
+    setRazon('')
+    cargar()
+  }
+
+  const confirmarReactivacion = async () => {
+    if (!reactivando) return
+    setProcesandoSusp(true)
+    const res = await SuspendUser(reactivando.id, false)
+    setProcesandoSusp(false)
+    if (!res.ok) {
+      toast.error(res.error ?? 'No se pudo reactivar el usuario.')
+      return
+    }
+    toast.success(`Usuario ${reactivando.email} reactivado.`)
+    setReactivando(null)
     cargar()
   }
 
@@ -141,22 +174,48 @@ export function Admin() {
                   <span className="md:hidden font-semibold mr-2">Último acceso:</span>
                   {formatFecha(u.lastSignInAt)}
                 </div>
-                <div className="flex items-center justify-end gap-3">
+                <div className="flex items-center justify-end gap-2">
                   <span
                     className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                      u.confirmed ? 'bg-primary/10 text-primary' : 'bg-error/10 text-error'
+                      u.suspended
+                        ? 'bg-error/10 text-error'
+                        : u.confirmed
+                          ? 'bg-primary/10 text-primary'
+                          : 'bg-surface-container text-on-surface-variant'
                     }`}
                   >
-                    {u.confirmed ? 'Confirmado' : 'Pendiente'}
+                    {u.suspended ? 'Suspendido' : u.confirmed ? 'Confirmado' : 'Pendiente'}
                   </span>
                   {u.id !== user?.id && (
-                    <button
-                      className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-error/10 text-error hover:bg-error hover:text-on-error"
-                      onClick={() => setBorrando(u)}
-                    >
-                      <Icon name="delete" size={16} />
-                      Eliminar
-                    </button>
+                    <>
+                      {u.suspended ? (
+                        <button
+                          className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-primary-container text-on-primary-container hover:bg-primary/20"
+                          onClick={() => setReactivando(u)}
+                        >
+                          <Icon name="unarchive" size={16} />
+                          Activar
+                        </button>
+                      ) : (
+                        <button
+                          className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-error-container/60 text-on-error-container hover:bg-error-container"
+                          onClick={() => {
+                            setSuspendiendo(u)
+                            setRazon('')
+                          }}
+                        >
+                          <Icon name="block" size={16} />
+                          Suspender
+                        </button>
+                      )}
+                      <button
+                        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-error/10 text-error hover:bg-error hover:text-on-error"
+                        onClick={() => setBorrando(u)}
+                      >
+                        <Icon name="delete" size={16} />
+                        Eliminar
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
@@ -200,6 +259,106 @@ export function Admin() {
                 onClick={confirmarBorrado}
               >
                 {procesando ? 'Eliminando…' : 'Eliminar usuario'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Suspend user modal */}
+      {suspendiendo && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => {
+            if (!procesandoSusp) setSuspendiendo(null)
+          }}
+        >
+          <div
+            className="w-full max-w-sm bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_24px_60px_rgba(11,28,48,0.25)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-3 mb-4">
+              <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-error-container/60 text-on-error-container flex-shrink-0">
+                <Icon name="block" />
+              </div>
+              <div>
+                <h3 className="font-display font-semibold text-xl text-on-surface mb-1">Suspender usuario</h3>
+                <p className="text-sm text-on-surface-variant">
+                  <strong className="text-on-surface">{suspendiendo.email}</strong> perderá el acceso de inmediato.
+                  Puedes reactivarlo después.
+                </p>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-on-surface mb-1.5" htmlFor="razon-suspension">
+                Razón <span className="text-on-surface-variant font-normal">(opcional)</span>
+              </label>
+              <textarea
+                autoFocus
+                className="block w-full pl-3 pr-3 py-2.5 bg-surface-container-low border border-outline-variant/30 rounded-lg text-on-surface focus:ring-1 focus:ring-primary focus:border-primary transition-all resize-none"
+                id="razon-suspension"
+                rows={2}
+                placeholder="Motivo de la suspensión"
+                value={razon}
+                onChange={(e) => setRazon(e.target.value)}
+              />
+            </div>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                className="px-4 py-2 rounded-lg text-sm font-medium text-on-surface-variant hover:bg-surface-container transition-colors disabled:opacity-40"
+                disabled={procesandoSusp}
+                onClick={() => setSuspendiendo(null)}
+              >
+                Cancelar
+              </button>
+              <button
+                className="px-5 py-2 rounded-lg text-sm font-semibold bg-error-container text-on-error-container hover:bg-error transition-colors hover:text-on-error disabled:opacity-60"
+                disabled={procesandoSusp}
+                onClick={confirmarSuspension}
+              >
+                {procesandoSusp ? 'Suspendiendo…' : 'Suspender'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reactivate user modal */}
+      {reactivando && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setReactivando(null)}
+        >
+          <div
+            className="w-full max-w-sm bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_24px_60px_rgba(11,28,48,0.25)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-3 mb-4">
+              <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-primary flex-shrink-0">
+                <Icon name="unarchive" />
+              </div>
+              <div>
+                <h3 className="font-display font-semibold text-xl text-on-surface mb-1">Reactivar usuario</h3>
+                <p className="text-sm text-on-surface-variant">
+                  <strong className="text-on-surface">{reactivando.email}</strong> recuperará el acceso a la
+                  aplicación.
+                </p>
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                className="px-4 py-2 rounded-lg text-sm font-medium text-on-surface-variant hover:bg-surface-container transition-colors disabled:opacity-40"
+                disabled={procesandoSusp}
+                onClick={() => setReactivando(null)}
+              >
+                Cancelar
+              </button>
+              <button
+                className="px-5 py-2 rounded-lg text-sm font-semibold bg-primary text-on-primary hover:bg-primary/90 transition-colors disabled:opacity-60"
+                disabled={procesandoSusp}
+                onClick={confirmarReactivacion}
+              >
+                {procesandoSusp ? 'Reactivando…' : 'Reactivar'}
               </button>
             </div>
           </div>

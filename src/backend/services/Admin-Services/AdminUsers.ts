@@ -8,6 +8,7 @@ export interface AdminUser {
   createdAt: string
   lastSignInAt: string | null
   confirmed: boolean
+  suspended: boolean
 }
 
 export interface ListUsersResult {
@@ -24,6 +25,7 @@ interface AdminUserRow {
   created_at: string
   last_sign_in_at: string | null
   confirmed: boolean
+  suspended: boolean
 }
 
 function mapRow(u: AdminUserRow): AdminUser {
@@ -35,6 +37,7 @@ function mapRow(u: AdminUserRow): AdminUser {
     createdAt: u.created_at,
     lastSignInAt: u.last_sign_in_at,
     confirmed: Boolean(u.confirmed),
+    suspended: Boolean(u.suspended),
   }
 }
 
@@ -49,6 +52,27 @@ export async function ListUsers(): Promise<ListUsersResult> {
 export async function DeleteUser(userId: string): Promise<{ ok: boolean; error?: string }> {
   const { error } = await supabase.rpc('admin_delete_user', { p_user_id: userId })
   return error ? { ok: false, error: error.message } : { ok: true }
+}
+
+/** Suspende o reactiva un usuario (bloqueo server-side vía banned_until). */
+export async function SuspendUser(
+  userId: string,
+  suspended: boolean,
+  reason?: string
+): Promise<{ ok: boolean; error?: string }> {
+  const { error } = await supabase.rpc('admin_suspend_user', {
+    p_user_id: userId,
+    p_suspended: suspended,
+    p_reason: reason?.trim() ? reason.trim() : null,
+  })
+  return error ? { ok: false, error: error.message } : { ok: true }
+}
+
+/** ¿La cuenta actual está suspendida? Leído server-side desde auth.users. */
+export async function IsAccountSuspended(): Promise<boolean> {
+  const { data, error } = await supabase.rpc('is_banned')
+  if (error) throw new Error(error.message)
+  return (data as boolean) === true
 }
 
 /** ¿El usuario actual es el superadmin? Lo decide Postgres (server-side). */

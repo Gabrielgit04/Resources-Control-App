@@ -1,13 +1,30 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
+import { toast } from 'sonner'
 import { Icon } from '@/components/Icon'
+import { supabase } from '@/server/supabase.service'
 
 export function RecoverPassword() {
   const [email, setEmail] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
+    setLoading(true)
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    })
+    setLoading(false)
+
+    if (error) {
+      toast.error(`No se pudo enviar el enlace: ${error.message}`)
+      return
+    }
+
+    toast.success('Si el correo está registrado, recibirás un enlace para restablecer tu contraseña.')
+    setEmail('')
   }
 
   return (
@@ -56,10 +73,11 @@ export function RecoverPassword() {
 
             {/* Primary Action */}
             <button
-              className="w-full bg-primary text-on-primary font-label font-medium rounded-lg py-3.5 px-4 shadow-[0_4px_12px_rgba(0,109,50,0.2)] hover:shadow-[0_8px_20px_rgba(0,109,50,0.3)] hover:bg-surface-tint active:scale-[0.98] transition-all duration-300 relative overflow-hidden group"
+              className="w-full bg-primary text-on-primary font-label font-medium rounded-lg py-3.5 px-4 shadow-[0_4px_12px_rgba(0,109,50,0.2)] hover:shadow-[0_8px_20px_rgba(0,109,50,0.3)] hover:bg-surface-tint active:scale-[0.98] transition-all duration-300 relative overflow-hidden group disabled:opacity-60 disabled:pointer-events-none"
+              disabled={loading}
               type="submit"
             >
-              <span className="relative z-10">Enviar enlace</span>
+              <span className="relative z-10">{loading ? 'Enviando…' : 'Enviar enlace'}</span>
               <span className="absolute inset-0 bg-gradient-to-r from-transparent via-primary-container/20 to-transparent translate-x-[-100%] group-hover:animate-[shimmer_1.5s_infinite] pointer-events-none" />
             </button>
           </form>
