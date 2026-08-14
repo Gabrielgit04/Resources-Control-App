@@ -3,6 +3,8 @@ import { defineConfig, loadEnv } from 'vite'
 import type { Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 
+import { cloudflare } from "@cloudflare/vite-plugin";
+
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
@@ -32,7 +34,7 @@ export default defineConfig(({ mode }) => {
   }
 
   return {
-    plugins: [react(), cspPlugin],
+    plugins: [react(), cspPlugin, cloudflare()],
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url)),
@@ -41,5 +43,5 @@ export default defineConfig(({ mode }) => {
     server: {
       open: true,
     },
-  }
+  };
 })
