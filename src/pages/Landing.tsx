@@ -12,7 +12,7 @@ const FEATURES = [
   {
     icon: 'bar_chart',
     title: 'Reportes y exportación',
-    description: 'Estados de resultado, balances e historial completo. Exporta a PDF, CSV y Excel con un clic.',
+    description: 'Estados de resultado, balances e historial completo. Exporta a PDF y Excel con un clic.',
     color: 'bg-secondary/10 text-secondary',
   },
   {
@@ -64,7 +64,7 @@ const STEPS = [
 
 const STATS = [
   { value: '$24.5k', label: 'Movimientos gestionados' },
-  { value: '3', label: 'Formatos de exportación' },
+  { value: '2', label: 'Formatos de exportación' },
   { value: '0', label: 'Errores de auditoría' },
   { value: '24/7', label: 'Disponibilidad' },
 ]
@@ -336,7 +336,7 @@ export function Landing() {
       </section>
 
       {/* Pricing */}
-      <section id="pricing" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28 scroll-mt-16">
+      {/* <section id="pricing" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28 scroll-mt-16">
         <div className="max-w-2xl mb-14 mx-auto text-center">
           <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-container/20 text-on-primary-container text-xs font-semibold uppercase tracking-wide">
             <Icon name="sell" fill size={14} />
@@ -428,7 +428,7 @@ export function Landing() {
             </div>
           ))}
         </div>
-      </section>
+      </section> */}
 
       {/* Final CTA */}
       <section className="bg-primary">
