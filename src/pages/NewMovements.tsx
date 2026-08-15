@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Icon } from '@/components/Icon'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { RouteTransition } from '@/components/RouteTransition'
 import { useAuth } from '@/components/auth/auth-context'
 import { isFreeText, isPositiveNumber, parseDecimal } from '@/lib/validation'
 import { CreateMovement } from '@/backend/services/Movements-Services/Create.Movement'
@@ -102,7 +103,8 @@ export function NuevoMovimiento() {
       </header>
 
       {/* Main Content Canvas */}
-      <main className="flex-1 w-full max-w-2xl mx-auto pt-20 pb-32 px-6 flex flex-col space-y-10 relative z-10">
+      <RouteTransition>
+        <main className="flex-1 w-full max-w-2xl mx-auto pt-20 pb-32 px-6 flex flex-col space-y-10 relative z-10">
         {/* Amount & Currency Section */}
         <section className="flex flex-col items-center justify-center pt-8 pb-4">
           {/* Currency Selector */}
@@ -241,6 +243,7 @@ export function NuevoMovimiento() {
           </div>
         </section>
       </main>
+      </RouteTransition>
 
       {/* Floating Action CTA (Sticky Bottom) */}
       <form onSubmit={handleSubmit}>

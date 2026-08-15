@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Icon } from '@/components/Icon'
+import { RouteTransition } from '@/components/RouteTransition'
 import { ChangePasswordForm } from '@/components/auth/ChangePasswordForm'
 import { supabase } from '@/server/supabase.service'
 
@@ -51,7 +52,8 @@ export function ResetPassword() {
   return (
     <div className="h-full bg-surface text-on-surface font-body antialiased flex items-center justify-center p-6 min-h-screen selection:bg-primary-container selection:text-on-primary-container">
       {/* The Luminous Engine Canvas */}
-      <main className="w-full max-w-md relative z-10">
+      <RouteTransition>
+        <main className="w-full max-w-md relative z-10">
         <div className="absolute -top-32 -left-32 w-64 h-64 bg-primary-container/20 rounded-full blur-[80px] -z-10 pointer-events-none" />
         <div className="absolute -bottom-32 -right-32 w-64 h-64 bg-secondary-container/10 rounded-full blur-[80px] -z-10 pointer-events-none" />
 
@@ -106,6 +108,7 @@ export function ResetPassword() {
           <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjQiIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMSIvPjwvc3ZnPg==')] opacity-50 mix-blend-overlay pointer-events-none" />
         </div>
       </main>
+      </RouteTransition>
     </div>
   )
 }

@@ -4,6 +4,7 @@ import { APP_NAME } from '@/config'
 import { Icon } from '@/components/Icon'
 import { EmptyState } from '@/components/EmptyState'
 import { BottomNav } from '@/components/layout/BottomNav'
+import { RouteTransition } from '@/components/RouteTransition'
 import { useAuth } from '@/components/auth/auth-context'
 import { SelectMovements } from '@/backend/services/Movements-Services/Select.Movements'
 import { GetCurrencySettings } from '@/backend/services/Currency-Services/Get.CurrencySettings'
@@ -190,7 +191,8 @@ export function Budget() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full space-y-8 pb-24 md:pb-8">
+      <RouteTransition>
+        <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full space-y-8 pb-24 md:pb-8">
         {/* Header Section */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
           <div>
@@ -241,7 +243,16 @@ export function Budget() {
           {/* Conceptual Chart Visualization */}
           <div className="relative z-10 mt-4">
             {loading ? (
-              <p className="text-sm text-on-surface-variant text-center py-8">Cargando movimientos…</p>
+              <div className="h-64 w-full flex items-end gap-2 md:gap-4" aria-hidden="true">
+                {[45, 70, 55, 80, 65, 90, 60, 75, 40].map((h, i) => (
+                  <div key={i} className="flex-1 flex flex-col justify-end h-full pb-6">
+                    <div
+                      className="w-full rounded-t-sm animate-pulse bg-surface-container-highest"
+                      style={{ height: `${h}%` }}
+                    />
+                  </div>
+                ))}
+              </div>
             ) : movements.length === 0 ? (
               <EmptyState
                 icon="monitoring"
@@ -370,6 +381,7 @@ export function Budget() {
           </div>
         </section>
       </main>
+      </RouteTransition>
 
       {/* Dialog de operaciones por categoría */}
       {dialogo && grupoActivo && (

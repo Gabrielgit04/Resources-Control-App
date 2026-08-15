@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Icon } from '@/components/Icon'
+import { Reveal } from '@/components/Reveal'
 import { APP_NAME } from '@/config'
 
 const FEATURES = [
@@ -88,7 +89,7 @@ function Logo() {
 
 function FeatureCard({ feature }: { feature: (typeof FEATURES)[number] }) {
   return (
-    <div className="group bg-surface-container-lowest rounded-xl p-6 border border-outline-variant/20 shadow-[0_4px_24px_rgba(11,28,48,0.03)] hover:shadow-[0_8px_32px_rgba(11,28,48,0.06)] hover:-translate-y-0.5 transition-all">
+    <div className="group h-full bg-surface-container-lowest rounded-xl p-6 border border-outline-variant/20 shadow-[0_4px_24px_rgba(11,28,48,0.03)] hover:shadow-[0_8px_32px_rgba(11,28,48,0.06)] hover:-translate-y-0.5 transition-all">
       <div
         className={`inline-flex items-center justify-center w-12 h-12 rounded-xl mb-5 group-hover:scale-105 transition-transform ${feature.color}`}
       >
@@ -228,11 +229,12 @@ export function Landing() {
         <div className="absolute top-[-15%] right-[-10%] w-[40vw] h-[40vw] rounded-full bg-gradient-to-br from-primary-container/15 to-transparent blur-[100px] pointer-events-none" />
         <div className="absolute bottom-[-20%] left-[-10%] w-[35vw] h-[35vw] rounded-full bg-gradient-to-tr from-secondary/10 to-transparent blur-[100px] pointer-events-none" />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          <div>
-            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-container/20 text-on-primary-container text-xs font-semibold uppercase tracking-wide">
-              <Icon name="bolt" fill size={14} />
-              Nueva generación de finanzas
-            </span>
+          <Reveal>
+            <div>
+              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-container/20 text-on-primary-container text-xs font-semibold uppercase tracking-wide">
+                <Icon name="bolt" fill size={14} />
+                Nueva generación de finanzas
+              </span>
             <h1 className="mt-6 font-headline font-bold text-4xl md:text-6xl leading-tight tracking-tight text-on-surface">
               Tus finanzas en
               <br />
@@ -267,20 +269,21 @@ export function Landing() {
               ))}
             </div>
           </div>
-          <div className="relative">
+          </Reveal>
+          <Reveal delay={120} className="relative">
             <AppPreview />
-          </div>
+          </Reveal>
         </div>
       </section>
 
       {/* Stats band */}
       <section className="bg-surface-container-low border-y border-outline-variant/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 grid grid-cols-2 md:grid-cols-4 gap-8">
-          {STATS.map((stat) => (
-            <div key={stat.label} className="text-center">
+          {STATS.map((stat, i) => (
+            <Reveal key={stat.label} delay={i * 60} className="text-center">
               <p className="font-display font-bold text-3xl md:text-4xl text-primary">{stat.value}</p>
               <p className="mt-1 text-sm text-on-surface-variant">{stat.label}</p>
-            </div>
+            </Reveal>
           ))}
         </div>
       </section>
@@ -300,8 +303,10 @@ export function Landing() {
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {FEATURES.map((feature) => (
-            <FeatureCard key={feature.title} feature={feature} />
+          {FEATURES.map((feature, i) => (
+            <Reveal key={feature.title} delay={(i % 3) * 60}>
+              <FeatureCard feature={feature} />
+            </Reveal>
           ))}
         </div>
       </section>
@@ -319,17 +324,19 @@ export function Landing() {
             </h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {STEPS.map((step) => (
-              <div key={step.step} className="bg-surface-container-lowest rounded-xl p-6 border border-outline-variant/20">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary-container/20 text-primary">
-                    <Icon name={step.icon} size={24} />
+            {STEPS.map((step, i) => (
+              <Reveal key={step.step} delay={i * 70}>
+                <div className="h-full bg-surface-container-lowest rounded-xl p-6 border border-outline-variant/20">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary-container/20 text-primary">
+                      <Icon name={step.icon} size={24} />
+                    </div>
+                    <span className="font-display font-bold text-4xl text-surface-container-highest">{step.step}</span>
                   </div>
-                  <span className="font-display font-bold text-4xl text-surface-container-highest">{step.step}</span>
+                  <h3 className="font-headline font-semibold text-lg text-on-surface mb-2">{step.title}</h3>
+                  <p className="text-sm text-on-surface-variant leading-relaxed">{step.description}</p>
                 </div>
-                <h3 className="font-headline font-semibold text-lg text-on-surface mb-2">{step.title}</h3>
-                <p className="text-sm text-on-surface-variant leading-relaxed">{step.description}</p>
-              </div>
+              </Reveal>
             ))}
           </div>
         </div>
@@ -432,7 +439,7 @@ export function Landing() {
 
       {/* Final CTA */}
       <section className="bg-primary">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
+        <Reveal className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
           <h2 className="font-headline font-bold text-3xl md:text-5xl tracking-tight text-on-primary">
             Toma el control de tu dinero hoy
           </h2>
@@ -446,7 +453,7 @@ export function Landing() {
             Crear cuenta gratis
             <Icon name="rocket_launch" size={18} />
           </Link>
-        </div>
+        </Reveal>
       </section>
 
       {/* Footer */}
