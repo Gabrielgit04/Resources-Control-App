@@ -1,4 +1,5 @@
 import { supabase } from '@/server/supabase.service'
+import { invalidateAll } from '@/lib/query-cache'
 
 export async function CreatePayment(data: { accountId: string; amount: number; notes?: string }) {
   const { accountId, amount, notes } = data
@@ -24,5 +25,6 @@ export async function CreatePayment(data: { accountId: string; amount: number; n
     return { ok: false, error: error.message }
   }
 
+  invalidateAll()
   return { ok: true, data: row }
 }

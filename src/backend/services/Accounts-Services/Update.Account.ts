@@ -1,5 +1,6 @@
 import { supabase } from '@/server/supabase.service'
 import { isFreeText, isTextOnly } from '@/lib/validation'
+import { invalidateAll } from '@/lib/query-cache'
 import type { InterestPeriod } from './Create.Account'
 
 export async function UpdateAccount(data: {
@@ -73,5 +74,6 @@ export async function UpdateAccount(data: {
     return { ok: false, error: error.message }
   }
 
+  invalidateAll()
   return { ok: true, data: row }
 }

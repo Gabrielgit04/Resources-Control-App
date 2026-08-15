@@ -1,5 +1,6 @@
 import { supabase } from '@/server/supabase.service'
 import { isFreeText, isTextOnly } from '@/lib/validation'
+import { invalidateAll } from '@/lib/query-cache'
 
 export type AccountType = 'payable' | 'receivable'
 export type InterestPeriod = 'weekly' | 'monthly'
@@ -71,5 +72,6 @@ export async function CreateAccount(data: {
     return { ok: false, error: error.message }
   }
 
+  invalidateAll()
   return { ok: true, data: row }
 }

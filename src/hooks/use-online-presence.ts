@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { supabase } from '@/server/supabase.service'
 
-export const PRESENCE_HEARTBEAT_MS = 60_000
+export const PRESENCE_HEARTBEAT_MS = 5 * 60 * 1000
 
 /**
  * Mantiene `last_seen_at` del usuario actualizado mientras la app está abierta.
@@ -16,6 +16,9 @@ export function useOnlinePresence(userId: string | null | undefined): void {
 
     const beat = () => {
       if (stopped) return
+      // No hace falta marcar presencia con la pestaña oculta (el navegador
+      // suspende los timers de fondo de todos modos).
+      if (document.hidden) return
       void supabase
         .from('users')
         .update({ last_seen_at: new Date().toISOString() })
