@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Icon } from '@/components/Icon'
+import { RouteTransition } from '@/components/RouteTransition'
 import { supabase } from '@/server/supabase.service'
 
 export function RecoverPassword() {
@@ -30,7 +31,8 @@ export function RecoverPassword() {
   return (
     <div className="h-full bg-surface text-on-surface font-body antialiased flex items-center justify-center p-6 min-h-screen selection:bg-primary-container selection:text-on-primary-container">
       {/* The Luminous Engine Canvas */}
-      <main className="w-full max-w-md relative z-10">
+      <RouteTransition>
+        <main className="w-full max-w-md relative z-10">
         {/* Decorative Ambient Layering */}
         <div className="absolute -top-32 -left-32 w-64 h-64 bg-primary-container/20 rounded-full blur-[80px] -z-10 pointer-events-none" />
         <div className="absolute -bottom-32 -right-32 w-64 h-64 bg-secondary-container/10 rounded-full blur-[80px] -z-10 pointer-events-none" />
@@ -99,6 +101,7 @@ export function RecoverPassword() {
           />
         </div>
       </main>
+      </RouteTransition>
     </div>
   )
 }

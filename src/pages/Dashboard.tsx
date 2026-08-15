@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Icon } from '@/components/Icon'
 import { EmptyState } from '@/components/EmptyState'
+import { AnimatedNumber } from '@/components/ui/AnimatedNumber'
+import { Skeleton } from '@/components/ui/skeleton'
 import { DonutChart, MonthlyBars } from '@/components/charts/charts'
 import { useAuth } from '@/components/auth/auth-context'
 import { SelectMovements } from '@/backend/services/Movements-Services/Select.Movements'
@@ -54,12 +56,15 @@ export function Dashboard() {
   const [missing, setMissing] = useState<string[]>([])
   const [vencimientos, setVencimientos] = useState<Vencimiento[]>([])
   const [recentPage, setRecentPage] = useState(0)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (!user) return
     let activo = true
+    setLoading(true)
     Promise.all([SelectMovements(user.id), GetCurrencySettings(user.id)]).then(([mov, cfg]) => {
       if (!activo) return
+      setLoading(false)
       const base = cfg.ok ? (cfg.data.base_currency ?? 'USD') : 'USD'
       const rates = cfg.ok ? (cfg.data.rates ?? {}) : {}
       const s: CurrencySettings = { baseCurrency: base as CurrencySettings['baseCurrency'], rates }
@@ -199,7 +204,7 @@ export function Dashboard() {
         </div>
         <Link
           to="/movimientos/nuevo"
-          className="hidden md:inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg bg-primary text-on-primary font-medium text-sm glow-hover transition-all"
+          className="hidden md:inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg bg-primary text-on-primary font-medium text-sm glow-hover transition-all active:scale-95"
         >
           <Icon name="add" size={18} />
           Nuevo Movimiento
@@ -212,17 +217,35 @@ export function Dashboard() {
         <div className="relative z-10 flex flex-col md:flex-row justify-between gap-6">
           <div>
             <p className="text-on-primary/80 text-xs font-medium uppercase tracking-wider mb-2">Balance Total</p>
-            <p className="font-display font-bold text-4xl md:text-5xl text-on-primary tracking-tight">{symbol}{balance.toFixed(2)}</p>
+            <p className="font-display font-bold text-4xl md:text-5xl text-on-primary tracking-tight">
+              {loading ? (
+                <Skeleton className="h-12 w-60 bg-white/25" />
+              ) : (
+                <AnimatedNumber value={balance} formatter={(v) => `${symbol}${v.toFixed(2)}`} />
+              )}
+            </p>
             <p className="text-on-primary/70 text-sm mt-2">Actualizado hace un momento</p>
           </div>
           <div className="flex items-center gap-8">
             <div>
               <p className="text-on-primary/80 text-xs font-medium uppercase tracking-wider mb-1">Ingresos</p>
-              <p className="font-display font-semibold text-xl text-on-primary">+{symbol}{ingresos.toFixed(2)}</p>
+              <p className="font-display font-semibold text-xl text-on-primary">
+                {loading ? (
+                  <Skeleton className="h-6 w-24 bg-white/25" />
+                ) : (
+                  <AnimatedNumber value={ingresos} formatter={(v) => `+${symbol}${v.toFixed(2)}`} />
+                )}
+              </p>
             </div>
             <div>
               <p className="text-on-primary/80 text-xs font-medium uppercase tracking-wider mb-1">Egresos</p>
-              <p className="font-display font-semibold text-xl text-on-primary">-{symbol}{egresos.toFixed(2)}</p>
+              <p className="font-display font-semibold text-xl text-on-primary">
+                {loading ? (
+                  <Skeleton className="h-6 w-24 bg-white/25" />
+                ) : (
+                  <AnimatedNumber value={egresos} formatter={(v) => `-${symbol}${v.toFixed(2)}`} />
+                )}
+              </p>
             </div>
           </div>
         </div>
@@ -282,7 +305,27 @@ export function Dashboard() {
       </div>
 
       {/* Resumen visual */}
-      {items.length > 0 && (
+      {loading ? (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_4px_24px_rgba(11,28,48,0.02)]">
+              <Skeleton className="h-5 w-44 mb-2" />
+              <Skeleton className="h-3 w-56 mb-4" />
+              <Skeleton className="h-52 w-full rounded-xl" />
+            </div>
+            <div className="bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_4px_24px_rgba(11,28,48,0.02)]">
+              <Skeleton className="h-5 w-40 mb-2" />
+              <Skeleton className="h-3 w-56 mb-4" />
+              <Skeleton className="h-52 w-full rounded-xl" />
+            </div>
+          </div>
+          <div className="bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_4px_24px_rgba(11,28,48,0.02)]">
+            <Skeleton className="h-5 w-40 mb-1" />
+            <Skeleton className="h-3 w-64 mb-4" />
+            <Skeleton className="h-64 w-full rounded-xl" />
+          </div>
+        </div>
+      ) : items.length > 0 && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_4px_24px_rgba(11,28,48,0.02)]">
@@ -326,15 +369,16 @@ export function Dashboard() {
             </Link>
           </div>
           <div className="space-y-2">
-            {vencimientos.slice(0, 6).map((v) => (
+            {vencimientos.slice(0, 6).map((v, i) => (
               <div
                 key={v.id}
-                className="flex items-center justify-between gap-3 p-3 rounded-lg bg-surface hover:bg-surface-container-low transition-colors ghost-border"
+                className="flex items-center justify-between gap-3 p-3 rounded-lg bg-surface hover:bg-surface-container-low transition-colors ghost-border animate-fade-in-up"
+                style={{ animationDelay: `${i * 50}ms` }}
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <span
                     className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                      v.vencida ? 'bg-error/10 text-error' : 'bg-primary/10 text-primary'
+                      v.vencida ? 'bg-error/10 text-error animate-pulse' : 'bg-primary/10 text-primary'
                     }`}
                   >
                     {v.vencida ? 'Vencida' : v.esPagar ? 'Por pagar' : 'Por cobrar'}
@@ -362,17 +406,33 @@ export function Dashboard() {
           </Link>
         </div>
         <div className="space-y-2">
-          {recent.length === 0 ? (
+          {loading ? (
+            <div className="space-y-2">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="grid grid-cols-1 md:grid-cols-5 gap-2 md:gap-4 p-4 rounded-lg bg-surface ghost-border items-center"
+                >
+                  <Skeleton className="h-4 w-28" />
+                  <Skeleton className="h-5 w-16 rounded-full" />
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-4 w-40" />
+                  <Skeleton className="h-4 w-20 md:ml-auto" />
+                </div>
+              ))}
+            </div>
+          ) : recent.length === 0 ? (
             <EmptyState
               icon="receipt_long"
               title="Aún no hay movimientos"
               description="Cuando registres tu primer ingreso o egreso, aparecerá aquí."
             />
           ) : (
-            rowsPagina.map((row) => (
+            rowsPagina.map((row, i) => (
               <div
-                key={row.id}
-                className="grid grid-cols-1 md:grid-cols-5 gap-2 md:gap-4 p-4 rounded-lg bg-surface hover:bg-surface-container-low transition-colors ghost-border items-center"
+                key={`${row.id}-${paginaActual}`}
+                className="grid grid-cols-1 md:grid-cols-5 gap-2 md:gap-4 p-4 rounded-lg bg-surface hover:bg-surface-container-low transition-colors ghost-border items-center animate-fade-in-up"
+                style={{ animationDelay: `${i * 40}ms` }}
               >
                 <div className="text-sm text-on-surface-variant">
                   <span className="md:hidden font-semibold mr-2">Fecha:</span>

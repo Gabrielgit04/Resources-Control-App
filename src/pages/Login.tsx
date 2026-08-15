@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Icon } from '@/components/Icon'
+import { RouteTransition } from '@/components/RouteTransition'
 import { APP_NAME } from '@/config'
 import { SignInUser } from '@/backend/services/Auth-Services/SignIn.Services'
 import {
@@ -76,7 +77,8 @@ export function Login() {
       </div>
 
       {/* Login Container */}
-      <main className="relative z-10 w-full max-w-md px-6 py-12">
+      <RouteTransition>
+        <main className="relative z-10 w-full max-w-md px-6 py-12">
         <div className="glass-panel rounded-xl shadow-[0_8px_30px_rgb(11,28,48,0.04)] border border-outline-variant/20 p-8">
           {/* Logo & Header */}
           <div className="text-center mb-10">
@@ -210,6 +212,7 @@ export function Login() {
           </p>
         </div>
       </main>
+      </RouteTransition>
     </div>
   )
 }

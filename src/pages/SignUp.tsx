@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Icon } from '@/components/Icon'
+import { RouteTransition } from '@/components/RouteTransition'
 import { APP_NAME } from '@/config'
 import { isEmail, isStrongPassword, isTextOnly } from '@/lib/validation'
 import { RegisterUser, type RegisterUserResult } from '@/backend/services/Auth-Services/SignUp.Services'
@@ -83,7 +84,8 @@ export function SignUp() {
       </div>
 
       {/* Main Container */}
-      <div className="relative z-10 w-full max-w-5xl mx-auto p-4 sm:p-8 flex items-center justify-center">
+      <RouteTransition>
+        <div className="relative z-10 w-full max-w-5xl mx-auto p-4 sm:p-8 flex items-center justify-center">
         {/* Registration Card (Asymmetrical Layout) */}
         <div className="w-full flex flex-col md:flex-row glass-panel rounded-xl overflow-hidden shadow-[0_24px_40px_rgba(11,28,48,0.04)]">
           {/* Left Side: Branding / Visuals */}
@@ -247,6 +249,7 @@ export function SignUp() {
           </div>
         </div>
       </div>
+      </RouteTransition>
     </div>
   )
 }
