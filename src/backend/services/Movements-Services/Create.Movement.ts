@@ -1,5 +1,6 @@
 import { supabase } from '@/server/supabase.service'
 import { isFreeText } from '@/lib/validation'
+import { invalidateAll } from '@/lib/query-cache'
 import type { UserMovements } from '@/backend/utils/types'
 
 export async function CreateMovement(movementData: UserMovements) {
@@ -41,5 +42,6 @@ export async function CreateMovement(movementData: UserMovements) {
     return { ok: false, error: error.message }
   }
 
+  invalidateAll()
   return { ok: true, data }
 }

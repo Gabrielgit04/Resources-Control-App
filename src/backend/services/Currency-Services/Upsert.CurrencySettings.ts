@@ -1,4 +1,5 @@
 import { supabase } from '@/server/supabase.service'
+import { invalidateAll } from '@/lib/query-cache'
 
 export async function UpsertCurrencySettings(data: {
   userId: string
@@ -29,5 +30,6 @@ export async function UpsertCurrencySettings(data: {
     return { ok: false, error: error.message }
   }
 
+  invalidateAll()
   return { ok: true, data: row }
 }

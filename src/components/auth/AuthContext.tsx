@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { toast } from 'sonner'
 import type { Session, User } from '@supabase/supabase-js'
 import { supabase, clearPersistedSession, setUnauthorizedHandler } from '@/server/supabase.service'
+import { invalidateAll } from '@/lib/query-cache'
 import { AuthContext } from '@/components/auth/auth-context'
 import { useOnlinePresence } from '@/hooks/use-online-presence'
 import { IsSuperAdmin, IsAccountSuspended, clearAdminCache } from '@/backend/services/Admin-Services/AdminUsers'
@@ -77,6 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUnauthorizedHandler(() => {
       supabase.auth.getSession().then(({ data }) => {
         if (!data.session) return
+        invalidateAll()
         void supabase.auth.signOut()
         clearPersistedSession()
         toast.error('Tu sesión expiró. Vuelve a iniciar sesión.')
@@ -88,6 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut()
     clearPersistedSession()
     clearAdminCache()
+    invalidateAll()
     setSession(null)
     setUser(null)
     setIsAdmin(false)

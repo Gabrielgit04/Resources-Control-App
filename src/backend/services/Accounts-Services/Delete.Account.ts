@@ -1,4 +1,5 @@
 import { supabase } from '@/server/supabase.service'
+import { invalidateAll } from '@/lib/query-cache'
 
 export async function DeleteAccount(data: { accountId: string; userId: string }) {
   const { accountId, userId } = data
@@ -29,5 +30,6 @@ export async function DeleteAccount(data: { accountId: string; userId: string })
     return { ok: false, error: accError.message }
   }
 
+  invalidateAll()
   return { ok: true }
 }
