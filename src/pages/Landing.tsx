@@ -109,7 +109,7 @@ function AppPreview() {
         <span className="w-2.5 h-2.5 rounded-full bg-primary-fixed-dim/50" />
         <span className="w-2.5 h-2.5 rounded-full bg-secondary/40" />
         <div className="ml-4 flex-1 max-w-[220px] bg-surface-container-lowest border border-outline-variant/20 rounded-md px-3 py-1 text-[10px] text-on-surface-variant">
-          app.g-finances.com/dashboard
+          app.g-amount.com/dashboard
         </div>
       </div>
 
@@ -239,7 +239,7 @@ export function Landing() {
               un solo <span className="text-primary">flujo.</span>
             </h1>
             <p className="mt-6 text-base md:text-lg text-on-surface-variant max-w-xl leading-relaxed">
-              G-Finances es el ecosistema inteligente para registrar, analizar y proyectar tus recursos. Reportes,
+              G-amount es el ecosistema inteligente para registrar, analizar y proyectar tus recursos. Reportes,
               presupuestos y automatizaciones en una sola plataforma, con la seguridad de una auditoría impecable.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-4">

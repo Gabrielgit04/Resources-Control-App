@@ -4,7 +4,7 @@ import { Icon } from '@/components/Icon'
 import { EmptyState } from '@/components/EmptyState'
 import { useAuth } from '@/components/auth/auth-context'
 import { useIsAdmin } from '@/hooks/use-is-admin'
-import { DeleteUser, ListUsers, SuspendUser, type AdminUser } from '@/backend/services/Admin-Services/AdminUsers'
+import { DeleteUser, isOnline, ListUsers, SuspendUser, type AdminUser } from '@/backend/services/Admin-Services/AdminUsers'
 
 function formatFecha(iso: string | null): string {
   if (!iso) return '—'
@@ -42,6 +42,12 @@ export function Admin() {
 
   useEffect(() => {
     if (esAdmin) cargar()
+  }, [esAdmin, cargar])
+
+  useEffect(() => {
+    if (!esAdmin) return
+    const timer = setInterval(() => cargar(), 30_000)
+    return () => clearInterval(timer)
   }, [esAdmin, cargar])
 
   const confirmarBorrado = async () => {
@@ -104,6 +110,7 @@ export function Admin() {
   }
 
   const confirmados = usuarios.filter((u) => u.confirmed).length
+  const conectados = usuarios.filter(isOnline).length
 
   return (
     <div className="space-y-10">
@@ -135,8 +142,9 @@ export function Admin() {
           <p className="font-display font-bold text-3xl text-primary">{confirmados}</p>
         </div>
         <div className="bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_8px_32px_rgba(11,28,48,0.03)]">
-          <p className="text-sm text-on-surface-variant font-medium mb-1">Sin confirmar</p>
-          <p className="font-display font-bold text-3xl text-error">{usuarios.length - confirmados}</p>
+          <p className="text-sm text-on-surface-variant font-medium mb-1">Conectados ahora</p>
+          <p className="font-display font-bold text-3xl text-primary">{conectados}</p>
+          <p className="text-xs text-on-surface-variant mt-1">de {usuarios.length} usuarios</p>
         </div>
       </div>
 
@@ -159,7 +167,17 @@ export function Admin() {
                 className="grid grid-cols-1 md:grid-cols-5 gap-2 md:gap-4 p-4 rounded-lg bg-surface hover:bg-surface-container-low transition-colors ghost-border items-center"
               >
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-on-surface truncate">{u.name}</p>
+                  <p className="text-sm font-medium text-on-surface truncate flex items-center gap-2">
+                    {u.name}
+                    <span
+                      className={`inline-flex items-center gap-1 text-[10px] font-semibold ${
+                        isOnline(u) ? 'text-primary' : 'text-on-surface-variant'
+                      }`}
+                    >
+                      <span className={`w-1.5 h-1.5 rounded-full ${isOnline(u) ? 'bg-primary' : 'bg-on-surface-variant/40'}`} />
+                      {isOnline(u) ? 'En línea' : 'Desconectado'}
+                    </span>
+                  </p>
                   <p className="text-xs text-on-surface-variant truncate">{u.email}</p>
                 </div>
                 <div className="text-sm text-on-surface-variant">

@@ -9,6 +9,15 @@ export interface AdminUser {
   lastSignInAt: string | null
   confirmed: boolean
   suspended: boolean
+  lastSeenAt: string | null
+}
+
+/** Ventana (ms) para considerar "conectado" a un usuario según su last_seen_at. */
+export const ONLINE_WINDOW_MS = 3 * 60 * 1000
+
+/** ¿El usuario está conectado ahora mismo? (última actividad dentro de la ventana) */
+export function isOnline(user: AdminUser): boolean {
+  return !!user.lastSeenAt && Date.now() - new Date(user.lastSeenAt).getTime() < ONLINE_WINDOW_MS
 }
 
 export interface ListUsersResult {
@@ -26,6 +35,7 @@ interface AdminUserRow {
   last_sign_in_at: string | null
   confirmed: boolean
   suspended: boolean
+  last_seen_at: string | null
 }
 
 function mapRow(u: AdminUserRow): AdminUser {
@@ -38,6 +48,7 @@ function mapRow(u: AdminUserRow): AdminUser {
     lastSignInAt: u.last_sign_in_at,
     confirmed: Boolean(u.confirmed),
     suspended: Boolean(u.suspended),
+    lastSeenAt: u.last_seen_at,
   }
 }
 

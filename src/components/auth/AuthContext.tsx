@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import type { Session, User } from '@supabase/supabase-js'
 import { supabase, clearPersistedSession, setUnauthorizedHandler } from '@/server/supabase.service'
 import { AuthContext } from '@/components/auth/auth-context'
+import { useOnlinePresence } from '@/hooks/use-online-presence'
 import { IsSuperAdmin, IsAccountSuspended, clearAdminCache } from '@/backend/services/Admin-Services/AdminUsers'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -11,6 +12,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
+
+  useOnlinePresence(user?.id)
 
   useEffect(() => {
     let mounted = true
