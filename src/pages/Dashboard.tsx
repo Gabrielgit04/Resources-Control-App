@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Icon } from '@/components/Icon'
 import { EmptyState } from '@/components/EmptyState'
+import { DonutChart, MonthlyBars } from '@/components/charts/charts'
 import { useAuth } from '@/components/auth/auth-context'
 import { SelectMovements } from '@/backend/services/Movements-Services/Select.Movements'
 import { SelectAccounts } from '@/backend/services/Accounts-Services/Select.Accounts'
@@ -46,6 +47,7 @@ function formatAmount(mount: number | string, currency: string, isIngreso: boole
 export function Dashboard() {
   const { user } = useAuth()
   const [recent, setRecent] = useState<RecentRow[]>([])
+  const [items, setItems] = useState<any[]>([])
   const [ingresos, setIngresos] = useState(0)
   const [egresos, setEgresos] = useState(0)
   const [settings, setSettings] = useState<CurrencySettings>(DEFAULT_CURRENCY_SETTINGS)
@@ -64,6 +66,7 @@ export function Dashboard() {
       setSettings(s)
       if (!mov.ok) return
       const items = mov.data as any[]
+      setItems(items)
       setMissing(missingRates(items, s))
       const toBase = (m: any) => convertToBase(Number(m.mount), m.currency ?? 'USD', s)
       const rows = items.map((m) => {
@@ -146,6 +149,42 @@ export function Dashboard() {
   const formatFechaCorta = (iso: string) =>
     new Date(`${iso}T00:00:00`).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })
 
+  const toBase = (m: any) => convertToBase(Number(m.mount), m.currency ?? 'USD', settings)
+
+  const porCategoria = (tipo: 'ingreso' | 'egreso') => {
+    const map = new Map<string, number>()
+    for (const m of items) {
+      if (m.type !== tipo) continue
+      const key = m.category ?? 'Otros'
+      map.set(key, (map.get(key) ?? 0) + toBase(m))
+    }
+    return Array.from(map, ([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value)
+  }
+
+  const ingresosPorCategoria = porCategoria('ingreso')
+  const egresosPorCategoria = porCategoria('egreso')
+
+  const mensual = useMemo(() => {
+    const map = new Map<string, { month: string; ingresos: number; egresos: number }>()
+    for (const m of items) {
+      const d = new Date(m.created_at)
+      if (Number.isNaN(d.getTime())) continue
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+      const entry = map.get(key) ?? {
+        month: d.toLocaleDateString('es-ES', { month: 'short' }),
+        ingresos: 0,
+        egresos: 0,
+      }
+      const base = convertToBase(Number(m.mount), m.currency ?? 'USD', settings)
+      if (m.type === 'ingreso') entry.ingresos += base
+      else entry.egresos += base
+      map.set(key, entry)
+    }
+    return Array.from(map, ([key, v]) => ({ key, ...v }))
+      .sort((a, b) => a.key.localeCompare(b.key))
+      .map(({ key: _key, ...rest }) => rest)
+  }, [items, settings])
+
   const totalPaginas = Math.max(1, Math.ceil(recent.length / PAGE_SIZE))
   const paginaActual = Math.min(recentPage, totalPaginas - 1)
   const rowsPagina = recent.slice(paginaActual * PAGE_SIZE, paginaActual * PAGE_SIZE + PAGE_SIZE)
@@ -160,7 +199,7 @@ export function Dashboard() {
         </div>
         <Link
           to="/movimientos/nuevo"
-          className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg bg-primary text-on-primary font-medium text-sm glow-hover transition-all"
+          className="hidden md:inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg bg-primary text-on-primary font-medium text-sm glow-hover transition-all"
         >
           <Icon name="add" size={18} />
           Nuevo Movimiento
@@ -241,6 +280,41 @@ export function Dashboard() {
           <Icon name="chevron_right" className="text-on-surface-variant group-hover:text-primary transition-colors" />
         </Link>
       </div>
+
+      {/* Resumen visual */}
+      {items.length > 0 && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_4px_24px_rgba(11,28,48,0.02)]">
+              <h3 className="font-display font-semibold text-lg text-on-surface mb-1">Ingresos por categoría</h3>
+              <p className="text-xs text-on-surface-variant mb-4">Distribución de tus entradas.</p>
+              <DonutChart
+                data={ingresosPorCategoria}
+                formatter={(v) => formatMoney(v, settings.baseCurrency)}
+                centerLabel={`+${formatMoney(ingresos, settings.baseCurrency)}`}
+              />
+            </div>
+            <div className="bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_4px_24px_rgba(11,28,48,0.02)]">
+              <h3 className="font-display font-semibold text-lg text-on-surface mb-1">Egresos por categoría</h3>
+              <p className="text-xs text-on-surface-variant mb-4">Distribución de tus salidas.</p>
+              <DonutChart
+                data={egresosPorCategoria}
+                formatter={(v) => formatMoney(v, settings.baseCurrency)}
+                centerLabel={`-${formatMoney(egresos, settings.baseCurrency)}`}
+              />
+            </div>
+          </div>
+          <div className="bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_4px_24px_rgba(11,28,48,0.02)]">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-4">
+              <div>
+                <h3 className="font-display font-semibold text-lg text-on-surface">Flujo mensual</h3>
+                <p className="text-xs text-on-surface-variant">Ingresos vs egresos por mes en {settings.baseCurrency}.</p>
+              </div>
+            </div>
+            <MonthlyBars data={mensual} formatter={(v) => formatMoney(v, settings.baseCurrency)} />
+          </div>
+        </div>
+      )}
 
       {/* Próximos vencimientos */}
       {vencimientos.length > 0 && (

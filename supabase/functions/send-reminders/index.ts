@@ -5,7 +5,7 @@ import { handleCors, corsHeaders, jsonResponse, rateLimit, requireUser, verifyCr
 const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
 const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 const resendKey = Deno.env.get('RESEND_API_KEY') ?? ''
-const fromEmail = Deno.env.get('REMINDER_FROM_EMAIL') ?? 'G-Finances <onboarding@resend.dev>'
+const fromEmail = Deno.env.get('REMINDER_FROM_EMAIL') ?? 'G-amount <onboarding@resend.dev>'
 const advanceDays = Number(Deno.env.get('REMINDER_ADVANCE_DAYS') ?? '2')
 
 const supabase = createClient(supabaseUrl, serviceRoleKey)
@@ -59,7 +59,7 @@ function buildHtml(list: any[]): string {
   <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;background:#f8fafc;padding:24px;">
     <div style="background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e4e4e7;">
       <div style="background:#006d32;padding:20px 24px;">
-        <h1 style="margin:0;color:#ffffff;font-size:18px;">G-Finances · Recordatorios de cuentas</h1>
+        <h1 style="margin:0;color:#ffffff;font-size:18px;">G-amount · Recordatorios de cuentas</h1>
       </div>
       <div style="padding:24px;">
         <p style="margin:0 0 16px;color:#111827;font-size:14px;line-height:1.6;">
@@ -79,7 +79,7 @@ function buildHtml(list: any[]): string {
           <tbody>${rows}</tbody>
         </table>
         <p style="margin:20px 0 0;color:#6b7280;font-size:12px;">
-          Este mensaje fue generado automáticamente por G-Finances. No respondas a este correo.
+          Este mensaje fue generado automáticamente por G-amount. No respondas a este correo.
         </p>
       </div>
     </div>
@@ -165,7 +165,7 @@ Deno.serve(async (req) => {
   for (const [userId, list] of byUser) {
     const user = users?.find((u) => u.user_id === userId)
     if (!user?.email) continue
-    const subject = `G-Finances: ${list.length} cuenta(s) próximas a vencer`
+    const subject = `G-amount: ${list.length} cuenta(s) próximas a vencer`
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {

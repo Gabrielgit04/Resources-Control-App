@@ -1,4 +1,4 @@
-# G-Finances
+# G-amount
 
 > **Luminous Engine** · Control de finanzas personales con auditoría, reportes y automatizaciones.
 
@@ -84,7 +84,7 @@ Las funciones se despliegan con la CLI de Supabase. Ejecuta antes de desplegar:
 supabase secrets set SUPERADMIN_USER_ID=<tu_uuid>
 supabase secrets set CRON_SECRET=<secreto_aleatorio>
 supabase secrets set RESEND_API_KEY=<resend_key>
-supabase secrets set REMINDER_FROM_EMAIL="G-Finances <tu@dominio.com>"
+supabase secrets set REMINDER_FROM_EMAIL="G-amount <tu@dominio.com>"
 ```
 
 ```bash
