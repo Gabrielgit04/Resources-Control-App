@@ -4,6 +4,7 @@ import { jsPDF } from 'jspdf'
 import * as XLSX from 'xlsx'
 import { Icon } from '@/components/Icon'
 import { EmptyState } from '@/components/EmptyState'
+import { DonutChart, MonthlyBars } from '@/components/charts/charts'
 import { useAuth } from '@/components/auth/auth-context'
 import { SelectMovements } from '@/backend/services/Movements-Services/Select.Movements'
 import { SelectAccounts } from '@/backend/services/Accounts-Services/Select.Accounts'
@@ -136,6 +137,40 @@ export function Reports() {
     .reduce((acc: number, m) => acc + toBase(m), 0)
   const neto = ingresos - egresos
   const symbol = currencySymbol(settings.baseCurrency)
+
+  const porCategoria = (tipo: 'ingreso' | 'egreso') => {
+    const map = new Map<string, number>()
+    for (const m of visibles) {
+      if (m.type !== tipo) continue
+      const key = m.category ?? 'Otros'
+      map.set(key, (map.get(key) ?? 0) + toBase(m))
+    }
+    return Array.from(map, ([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value)
+  }
+
+  const ingresosPorCategoria = porCategoria('ingreso')
+  const egresosPorCategoria = porCategoria('egreso')
+
+  const mensual = useMemo(() => {
+    const map = new Map<string, { month: string; ingresos: number; egresos: number }>()
+    for (const m of visibles) {
+      const d = new Date(m.created_at)
+      if (Number.isNaN(d.getTime())) continue
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+      const entry = map.get(key) ?? {
+        month: d.toLocaleDateString('es-ES', { month: 'short' }),
+        ingresos: 0,
+        egresos: 0,
+      }
+      const base = convertToBase(Number(m.mount), m.currency ?? 'USD', settings)
+      if (m.type === 'ingreso') entry.ingresos += base
+      else entry.egresos += base
+      map.set(key, entry)
+    }
+    return Array.from(map, ([key, v]) => ({ key, ...v }))
+      .sort((a, b) => a.key.localeCompare(b.key))
+      .map(({ key: _key, ...rest }) => rest)
+  }, [visibles, settings])
 
   const porCobrarPendientes = porCobrar.filter((c) => restanteDeCuenta(c) > 0)
   const porPagarPendientes = porPagar.filter((c) => restanteDeCuenta(c) > 0)
@@ -461,6 +496,35 @@ export function Reports() {
             </button>
           </div>
         </div>
+
+        {/* Análisis visual */}
+        {visibles.length > 0 && (
+          <div className="lg:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_4px_24px_rgba(11,28,48,0.02)]">
+              <h3 className="font-display font-semibold text-lg text-on-surface mb-1">Ingresos por categoría</h3>
+              <p className="text-xs text-on-surface-variant mb-4">Distribución en el período filtrado.</p>
+              <DonutChart
+                data={ingresosPorCategoria}
+                formatter={(v) => formatMoney(v, settings.baseCurrency)}
+                centerLabel={`+${formatMoney(ingresos, settings.baseCurrency)}`}
+              />
+            </div>
+            <div className="bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_4px_24px_rgba(11,28,48,0.02)]">
+              <h3 className="font-display font-semibold text-lg text-on-surface mb-1">Egresos por categoría</h3>
+              <p className="text-xs text-on-surface-variant mb-4">Distribución en el período filtrado.</p>
+              <DonutChart
+                data={egresosPorCategoria}
+                formatter={(v) => formatMoney(v, settings.baseCurrency)}
+                centerLabel={`-${formatMoney(egresos, settings.baseCurrency)}`}
+              />
+            </div>
+            <div className="md:col-span-2 bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_4px_24px_rgba(11,28,48,0.02)]">
+              <h3 className="font-display font-semibold text-lg text-on-surface mb-1">Flujo mensual</h3>
+              <p className="text-xs text-on-surface-variant mb-4">Ingresos vs egresos por mes en {settings.baseCurrency}.</p>
+              <MonthlyBars data={mensual} formatter={(v) => formatMoney(v, settings.baseCurrency)} />
+            </div>
+          </div>
+        )}
 
         {/* Historial Completo (Full Width Data Table Style) */}
         <div className="lg:col-span-12 bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_4px_24px_rgba(11,28,48,0.02)]">

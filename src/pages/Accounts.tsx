@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { Icon } from '@/components/Icon'
 import { EmptyState } from '@/components/EmptyState'
+import { TopCounterparties } from '@/components/charts/charts'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { useAuth } from '@/components/auth/auth-context'
@@ -195,6 +196,15 @@ export function Accounts() {
 
   const fmt = (monto: number, moneda: string) =>
     formatMoney(convertToBase(monto, moneda, settings), settings.baseCurrency)
+
+  const topContrapartes = cuentas
+    .map((c) => ({
+      name: c.contraparte,
+      value: convertToBase(Math.max(0, c.monto - c.abonado), c.currency, settings),
+    }))
+    .filter((d) => d.value > 0)
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 6)
 
   const abrirAbono = (c: Cuenta) => {
     setAbonando(c)
@@ -501,6 +511,21 @@ export function Accounts() {
           </p>
         </div>
       </div>
+
+      {/* Top contrapartes */}
+      {topContrapartes.length > 0 && (
+        <div className="bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_4px_24px_rgba(11,28,48,0.02)]">
+          <div className="flex justify-between items-center mb-4">
+            <div>
+              <h3 className="font-display font-semibold text-xl text-on-surface">Top contrapartes</h3>
+              <p className="text-sm text-on-surface-variant">
+                Montos pendientes por contraparte en {settings.baseCurrency}.
+              </p>
+            </div>
+          </div>
+          <TopCounterparties data={topContrapartes} formatter={(v) => fmt(v, settings.baseCurrency)} />
+        </div>
+      )}
 
       {/* Table */}
       <div className="bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_4px_24px_rgba(11,28,48,0.02)]">
