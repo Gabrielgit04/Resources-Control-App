@@ -201,29 +201,6 @@ export function Login() {
             </div>
           </form>
 
-          {/* Divider */}
-          <div className="mt-8 relative">
-            <div aria-hidden="true" className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-outline-variant/20" />
-            </div>
-            <div className="relative flex justify-center">
-              <span className="px-2 bg-white text-xs font-label text-on-surface-variant uppercase tracking-wide">
-                O continúa con
-              </span>
-            </div>
-          </div>
-
-          {/* Social Logins */}
-          <div className="mt-6 grid gap-3">
-            <button
-              className="w-full inline-flex justify-center items-center py-2 px-4 border border-outline-variant/30 rounded-lg bg-surface-container-low text-sm font-medium text-on-surface hover:bg-surface-container-highest transition-colors"
-              type="button"
-            >
-              <Icon name="g_mobiledata" size={18} className="mr-2" />
-              Google
-            </button>
-          </div>
-
           {/* Sign up link */}
           <p className="mt-8 text-center font-body text-sm text-on-surface-variant">
             ¿No tienes una cuenta?{' '}

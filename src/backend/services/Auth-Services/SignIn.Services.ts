@@ -32,14 +32,14 @@ export async function SignInUser(userData: SignInData): Promise<SignInResult> {
             }
         }
 
-        const userId = data.user?.id
-        console.info('[SignIn] Sesión iniciada para userId:', userId)
+        // const userId = data.user?.id
+        // console.info('[SignIn] Sesión iniciada para userId:', userId)
 
         let isAdmin = false
         try {
             isAdmin = await IsSuperAdmin()
         } catch (err) {
-            console.error(`[SignIn] Falló la verificación de superadmin para userId ${userId}:`, err)
+            console.error(`[SignIn] Falló la verificación de superadmin`, err)
         }
 
         return { ok: true, data, isAdmin }

@@ -18,6 +18,6 @@ export const BOTTOM_NAV_ITEMS: NavItem[] = [
   { label: 'Panel', icon: 'dashboard', to: '/dashboard' },
   { label: 'Cuentas', icon: 'receipt_long', to: '/accounts' },
   { label: 'Uso', icon: 'bar_chart', to: '/reports' },
-  { label: 'Automatizaciones', icon: 'settings_input_component', to: '/automations' },
+  { label: 'Ajustes', icon: 'settings', to: '/profile' },
   { label: 'Usuarios', icon: 'group', to: '/admin', admin: true },
 ]

@@ -18,11 +18,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsAdmin(false)
       return
     }
-    console.info('[AuthProvider] Verificando superadmin para userId:', user.id)
+    // console.info('[AuthProvider] Verificando superadmin para userId:', user.id)
     IsSuperAdmin()
       .then((value) => {
         if (mounted) {
-          console.info(`[AuthProvider] userId ${user.id} es superadmin:`, value)
+          // console.info(`[AuthProvider] userId ${user.id} es superadmin:`, value)
           setIsAdmin(value)
         }
       })
