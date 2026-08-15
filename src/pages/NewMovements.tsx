@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 import { Icon } from '@/components/Icon'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useAuth } from '@/components/auth/auth-context'
-import { isFreeText, isPositiveNumber } from '@/lib/validation'
+import { isFreeText, isPositiveNumber, parseDecimal } from '@/lib/validation'
 import { CreateMovement } from '@/backend/services/Movements-Services/Create.Movement'
 import type { UserMovements } from '@/backend/utils/types'
 
@@ -45,7 +45,7 @@ export function NuevoMovimiento() {
       toast.error('Ingresa un monto válido mayor a cero (hasta 2 decimales).')
       return
     }
-    const monto = Number(amount)
+    const monto = parseDecimal(amount)
     if (!isFreeText(notes)) {
       toast.error('Agrega una descripción válida.')
       return

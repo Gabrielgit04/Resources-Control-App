@@ -5,7 +5,7 @@ import { EmptyState } from '@/components/EmptyState'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { useAuth } from '@/components/auth/auth-context'
-import { isFreeText, isPositiveNumber, isRate, isTextOnly } from '@/lib/validation'
+import { isFreeText, isPositiveNumber, isRate, isTextOnly, parseDecimal } from '@/lib/validation'
 import { CreateAccount, type AccountType, type InterestPeriod } from '@/backend/services/Accounts-Services/Create.Account'
 import { SelectAccounts } from '@/backend/services/Accounts-Services/Select.Accounts'
 import { CreatePayment } from '@/backend/services/Accounts-Services/Create.Payment'
@@ -243,7 +243,7 @@ export function Accounts() {
       toast.error('Ingresa un monto válido mayor a cero (hasta 2 decimales).')
       return
     }
-    const cantidad = Number(montoAbono)
+    const cantidad = parseDecimal(montoAbono)
     setRegistrando(true)
     const result = await CreatePayment({ accountId: abonando.id, amount: cantidad })
     if (!result.ok) {
@@ -302,13 +302,13 @@ export function Accounts() {
       toast.error('Ingresa un monto válido mayor a cero (hasta 2 decimales).')
       return
     }
-    const monto = Number(form.monto)
+    const monto = parseDecimal(form.monto)
     const tieneInteres = form.interes.trim() !== ''
     if (tieneInteres && !isRate(form.interes)) {
       toast.error('Ingresa un porcentaje de interés válido (0 a 100).')
       return
     }
-    const interes = tieneInteres ? Number(form.interes) : null
+    const interes = tieneInteres ? parseDecimal(form.interes) : null
     setGuardandoCuenta(true)
     const result = await CreateAccount({
       userId: user.id,
@@ -369,13 +369,13 @@ export function Accounts() {
       toast.error('Ingresa un monto válido mayor a cero (hasta 2 decimales).')
       return
     }
-    const monto = Number(formEditar.monto)
+    const monto = parseDecimal(formEditar.monto)
     const tieneInteres = formEditar.interes.trim() !== ''
     if (tieneInteres && !isRate(formEditar.interes)) {
       toast.error('Ingresa un porcentaje de interés válido (0 a 100).')
       return
     }
-    const interes = tieneInteres ? Number(formEditar.interes) : null
+    const interes = tieneInteres ? parseDecimal(formEditar.interes) : null
     setGuardandoEdicion(true)
     const result = await UpdateAccount({
       accountId: editando.id,
@@ -714,10 +714,9 @@ export function Accounts() {
                   autoFocus
                   className="block w-full pl-3 pr-3 py-2.5 bg-surface-container-low border border-outline-variant/30 rounded-lg text-on-surface focus:ring-1 focus:ring-primary focus:border-primary transition-all"
                   id="monto-abono"
-                  min="0.01"
+                  inputMode="decimal"
                   placeholder="0.00"
-                  step="0.01"
-                  type="number"
+                  type="text"
                   value={montoAbono}
                   onChange={(e) => setMontoAbono(e.target.value)}
                 />
@@ -826,10 +825,9 @@ export function Accounts() {
                   <input
                     className="block w-full pl-3 pr-3 py-2.5 bg-surface-container-low border border-outline-variant/30 rounded-lg text-on-surface focus:ring-1 focus:ring-primary focus:border-primary transition-all"
                     id="cuenta-monto"
-                    min="0.01"
+                    inputMode="decimal"
                     placeholder="0.00"
-                    step="0.01"
-                    type="number"
+                    type="text"
                     value={form.monto}
                     onChange={(e) => setForm({ ...form, monto: e.target.value })}
                   />
@@ -869,10 +867,9 @@ export function Accounts() {
                     <input
                       className="block w-full pl-3 pr-3 py-2.5 bg-surface-container-low border border-outline-variant/30 rounded-lg text-on-surface focus:ring-1 focus:ring-primary focus:border-primary transition-all"
                       id="cuenta-interes"
-                      min="0"
+                      inputMode="decimal"
                       placeholder="0.00"
-                      step="0.01"
-                      type="number"
+                      type="text"
                       value={form.interes}
                       onChange={(e) => setForm({ ...form, interes: e.target.value })}
                     />
@@ -985,10 +982,9 @@ export function Accounts() {
                   <input
                     className="block w-full pl-3 pr-3 py-2.5 bg-surface-container-low border border-outline-variant/30 rounded-lg text-on-surface focus:ring-1 focus:ring-primary focus:border-primary transition-all"
                     id="editar-monto"
-                    min="0.01"
+                    inputMode="decimal"
                     placeholder="0.00"
-                    step="0.01"
-                    type="number"
+                    type="text"
                     value={formEditar.monto}
                     onChange={(e) => setFormEditar({ ...formEditar, monto: e.target.value })}
                   />
@@ -1033,10 +1029,9 @@ export function Accounts() {
                     <input
                       className="block w-full pl-3 pr-3 py-2.5 bg-surface-container-low border border-outline-variant/30 rounded-lg text-on-surface focus:ring-1 focus:ring-primary focus:border-primary transition-all"
                       id="editar-interes"
-                      min="0"
+                      inputMode="decimal"
                       placeholder="0.00"
-                      step="0.01"
-                      type="number"
+                      type="text"
                       value={formEditar.interes}
                       onChange={(e) => setFormEditar({ ...formEditar, interes: e.target.value })}
                     />

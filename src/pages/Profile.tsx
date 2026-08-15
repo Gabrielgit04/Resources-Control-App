@@ -8,7 +8,7 @@ import { SelectRow } from '@/components/ui/select'
 import { ChangePasswordForm } from '@/components/auth/ChangePasswordForm'
 import { useAuth } from '@/components/auth/auth-context'
 import { useProfile } from '@/hooks/use-profile'
-import { isEmail, isPhone, isPositiveNumber, isTextOnly } from '@/lib/validation'
+import { isEmail, isPhone, isPositiveNumber, isTextOnly, parseDecimal } from '@/lib/validation'
 import { CURRENCIES, type CurrencyCode } from '@/lib/currency'
 import { GetCurrencySettings } from '@/backend/services/Currency-Services/Get.CurrencySettings'
 import { UpsertCurrencySettings } from '@/backend/services/Currency-Services/Upsert.CurrencySettings'
@@ -149,7 +149,7 @@ export function Profile() {
         toast.error(`Ingresa una tasa válida para ${c.value} (mayor a cero).`)
         return
       }
-      rates[c.value] = Number(raw)
+      rates[c.value] = parseDecimal(raw)
     }
     setSavingCurrency(true)
     const result = await UpsertCurrencySettings({
@@ -440,10 +440,9 @@ export function Profile() {
                   <input
                     aria-label={`Tasa ${c.value}`}
                     className="w-24 px-3 py-2 bg-surface-container-low border border-outline-variant/30 rounded-lg text-sm text-on-surface text-right focus:ring-1 focus:ring-primary focus:border-primary transition-all"
-                    min="0"
+                    inputMode="decimal"
                     placeholder="0.00"
-                    step="any"
-                    type="number"
+                    type="text"
                     value={ratesInput[c.value] ?? ''}
                     onChange={(e) => setRatesInput((prev) => ({ ...prev, [c.value]: e.target.value }))}
                   />

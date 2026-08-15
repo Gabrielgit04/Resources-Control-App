@@ -4,7 +4,7 @@
 
 const TEXT_ONLY_RE = /^[\p{L}\p{M}]+(?:(?:[\s'._-]|,)[\p{L}\p{M}]+)*$/u
 const FREE_TEXT_RE = /^[\p{L}\p{M}\p{N}\s.,;:_'"()/@+-]+$/u
-const POSITIVE_NUMBER_RE = /^[0-9]+(?:\.[0-9]+)?$/
+const POSITIVE_NUMBER_RE = /^[0-9]+(?:(?:[.,])[0-9]+)?$/
 const WHOLE_NUMBER_RE = /^[0-9]+$/
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 const PHONE_RE = /^\+?[0-9][0-9\s\-()]{5,19}$/
@@ -36,22 +36,29 @@ export function isWholeNumber(value: string): boolean {
   return WHOLE_NUMBER_RE.test(value.trim())
 }
 
+/** Convierte un monto ingresado (aceptando coma o punto decimal) a número. */
+export function parseDecimal(value: string): number {
+  return Number(value.trim().replace(',', '.'))
+}
+
 /** ¿Es un número positivo (décimales opcionales, máx. `maxDecimals`)? Para montos. */
 export function isPositiveNumber(value: string, maxDecimals = 2): boolean {
   const v = value.trim()
   if (!POSITIVE_NUMBER_RE.test(v)) return false
-  const decimals = v.includes('.') ? v.split('.')[1].length : 0
+  const sepIndex = v.search(/[.,]/)
+  const decimals = sepIndex === -1 ? 0 : v.length - sepIndex - 1
   if (decimals > maxDecimals) return false
-  return Number(v) > 0
+  return Number(v.replace(',', '.')) > 0
 }
 
 /** ¿Es un porcentaje válido entre 0 y 100 (décimales opcionales)? */
 export function isRate(value: string, maxDecimals = 2): boolean {
   const v = value.trim()
   if (!POSITIVE_NUMBER_RE.test(v)) return false
-  const decimals = v.includes('.') ? v.split('.')[1].length : 0
+  const sepIndex = v.search(/[.,]/)
+  const decimals = sepIndex === -1 ? 0 : v.length - sepIndex - 1
   if (decimals > maxDecimals) return false
-  const n = Number(v)
+  const n = Number(v.replace(',', '.'))
   return Number.isFinite(n) && n >= 0 && n <= 100
 }
 
