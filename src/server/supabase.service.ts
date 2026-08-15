@@ -10,7 +10,7 @@ export const SUPABASE_TIMEOUT_MS = 15000;
 export const AUTH_STORAGE_KEY = "supabase.auth.token";
 
 /** Clave donde guardamos la preferencia "Recuérdame" (siempre en localStorage). */
-export const REMEMBER_ME_KEY = "gfinances_remember_me";
+export const REMEMBER_ME_KEY = "gamount_remember_me";
 
 /** Preferencia "Recuérdame". Por defecto true (solo false si se marcó explícitamente). */
 export function isRememberMe(): boolean {

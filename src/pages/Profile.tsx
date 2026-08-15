@@ -25,8 +25,8 @@ const NOTIFICATION_OPTIONS = [
   { value: 'email', label: 'Solo Email' },
 ] as const
 
-const CURRENCY_STORAGE_KEY = 'g-finances:currency'
-const NOTIFICATIONS_STORAGE_KEY = 'g-finances:notifications'
+const CURRENCY_STORAGE_KEY = 'g-amount:currency'
+const NOTIFICATIONS_STORAGE_KEY = 'g-amount:notifications'
 
 interface RowProps {
   icon: string

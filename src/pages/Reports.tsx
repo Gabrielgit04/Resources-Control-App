@@ -244,7 +244,7 @@ export function Reports() {
   const exportarPDF = (tipo: 'resultados' | 'balance') => {
     const doc = new jsPDF()
     doc.setFontSize(16)
-    doc.text('G-Finances', 14, 18)
+    doc.text('G-amount', 14, 18)
     doc.setFontSize(13)
     doc.text(tipo === 'resultados' ? 'Estado de Resultados' : 'Balance General', 14, 27)
     doc.setFontSize(9)
