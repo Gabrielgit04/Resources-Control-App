@@ -9,7 +9,7 @@ import { ChangePasswordForm } from '@/components/auth/ChangePasswordForm'
 import { useAuth } from '@/components/auth/auth-context'
 import { useProfile } from '@/hooks/use-profile'
 import { isEmail, isPhone, isPositiveNumber, isTextOnly, parseDecimal } from '@/lib/validation'
-import { CURRENCIES, type CurrencyCode } from '@/lib/currency'
+import { CURRENCIES, rateUnitsPerBase, type CurrencyCode } from '@/lib/currency'
 import { GetCurrencySettings } from '@/backend/services/Currency-Services/Get.CurrencySettings'
 import { UpsertCurrencySettings } from '@/backend/services/Currency-Services/Upsert.CurrencySettings'
 
@@ -17,6 +17,7 @@ const CURRENCY_OPTIONS = [
   { value: 'USD', label: 'USD ($)' },
   { value: 'EUR', label: 'EUR (€)' },
   { value: 'VES', label: 'VES (Bs)' },
+  { value: 'CLP', label: 'CLP ($)' },
 ] as const
 
 const NOTIFICATION_OPTIONS = [
@@ -431,7 +432,7 @@ export function Profile() {
                     <div>
                       <p className="text-sm font-medium text-on-surface">{c.label}</p>
                       <p className="text-sm text-on-surface-variant">
-                        {c.value === 'VES'
+                        {rateUnitsPerBase(c.value)
                           ? `${c.value} por 1 ${conversionBase}`
                           : `1 ${c.value} en ${conversionBase}`}
                       </p>

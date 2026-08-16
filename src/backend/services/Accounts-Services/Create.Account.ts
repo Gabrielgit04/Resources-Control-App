@@ -1,6 +1,7 @@
 import { supabase } from '@/server/supabase.service'
 import { isFreeText, isTextOnly } from '@/lib/validation'
 import { invalidateAll } from '@/lib/query-cache'
+import { isSupportedCurrency } from '@/lib/currency'
 
 export type AccountType = 'payable' | 'receivable'
 export type InterestPeriod = 'weekly' | 'monthly'
@@ -48,7 +49,7 @@ export async function CreateAccount(data: {
   if (interestRate && interestPeriod !== 'weekly' && interestPeriod !== 'monthly') {
     return { ok: false, error: 'Selecciona un periodo de interés válido.' }
   }
-  if (currency && !['USD', 'EUR', 'VES'].includes(currency)) {
+  if (currency && !isSupportedCurrency(currency)) {
     return { ok: false, error: 'Moneda inválida.' }
   }
 
