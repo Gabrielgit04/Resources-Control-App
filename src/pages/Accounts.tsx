@@ -5,6 +5,7 @@ import { EmptyState } from '@/components/EmptyState'
 import { TopCounterparties } from '@/components/charts/charts'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
+import { Modal } from '@/components/ui/modal'
 import { useAuth } from '@/components/auth/auth-context'
 import { isFreeText, isPositiveNumber, isRate, isTextOnly, parseDecimal } from '@/lib/validation'
 import { CreateAccount, type AccountType, type InterestPeriod } from '@/backend/services/Accounts-Services/Create.Account'
@@ -701,15 +702,14 @@ export function Accounts() {
       </div>
 
       {/* Abono Modal */}
-      {abonando && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          onClick={() => setAbonando(null)}
-        >
-          <div
-            className="w-full max-w-sm bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_24px_60px_rgba(11,28,48,0.25)]"
-            onClick={(e) => e.stopPropagation()}
-          >
+      <Modal
+        open={abonando !== null}
+        onClose={() => setAbonando(null)}
+        panelClassName="w-full max-w-sm my-auto bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_24px_60px_rgba(11,28,48,0.25)] max-h-[90dvh] overflow-y-auto"
+        payload={abonando}
+      >
+        {(abonando) => (
+          <>
             <h3 className="font-display font-semibold text-xl text-on-surface mb-1">
               {esPagar ? 'Abonar a cuenta' : 'Registrar cobro'}
             </h3>
@@ -793,20 +793,16 @@ export function Accounts() {
                 {esPagar ? 'Abonar' : 'Registrar'}
               </button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Modal>
 
       {/* Nueva Cuenta Modal */}
-      {creando && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          onClick={() => setCreando(false)}
-        >
-          <div
-            className="w-full max-w-sm bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_24px_60px_rgba(11,28,48,0.25)]"
-            onClick={(e) => e.stopPropagation()}
-          >
+      <Modal
+        open={creando}
+        onClose={() => setCreando(false)}
+        panelClassName="w-full max-w-sm my-auto bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_24px_60px_rgba(11,28,48,0.25)] max-h-[90dvh] overflow-y-auto"
+      >
             <h3 className="font-display font-semibold text-xl text-on-surface mb-1">
               Nueva cuenta por {esPagar ? 'pagar' : 'cobrar'}
             </h3>
@@ -951,20 +947,17 @@ export function Accounts() {
                 Crear cuenta
               </button>
             </div>
-          </div>
-        </div>
-      )}
+      </Modal>
 
       {/* Editar Cuenta Modal */}
-      {editando && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          onClick={() => setEditando(null)}
-        >
-          <div
-            className="w-full max-w-sm bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_24px_60px_rgba(11,28,48,0.25)]"
-            onClick={(e) => e.stopPropagation()}
-          >
+      <Modal
+        open={editando !== null}
+        onClose={() => setEditando(null)}
+        panelClassName="w-full max-w-sm my-auto bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_24px_60px_rgba(11,28,48,0.25)] max-h-[90dvh] overflow-y-auto"
+        payload={editando}
+      >
+        {(editando) => (
+          <>
             <h3 className="font-display font-semibold text-xl text-on-surface mb-1">
               Editar cuenta por {esPagar ? 'pagar' : 'cobrar'}
             </h3>
@@ -1109,20 +1102,19 @@ export function Accounts() {
                 Guardar cambios
               </button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Modal>
 
       {/* Eliminar Cuenta Modal */}
-      {eliminando && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          onClick={() => setEliminando(null)}
-        >
-          <div
-            className="w-full max-w-sm bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_24px_60px_rgba(11,28,48,0.25)]"
-            onClick={(e) => e.stopPropagation()}
-          >
+      <Modal
+        open={eliminando !== null}
+        onClose={() => setEliminando(null)}
+        panelClassName="w-full max-w-sm my-auto bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_24px_60px_rgba(11,28,48,0.25)]"
+        payload={eliminando}
+      >
+        {(eliminando) => (
+          <>
             <h3 className="font-display font-semibold text-xl text-on-surface mb-2">¿Eliminar cuenta?</h3>
             <p className="text-sm text-on-surface-variant mb-2">
               <span className="font-medium text-on-surface">{eliminando.contraparte}</span> · {eliminando.concepto}
@@ -1146,9 +1138,9 @@ export function Accounts() {
                 {eliminandoId === eliminando.id ? 'Eliminando…' : 'Eliminar'}
               </button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Modal>
     </div>
   )
 }
