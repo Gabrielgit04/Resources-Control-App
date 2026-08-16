@@ -867,6 +867,7 @@ export function Accounts() {
                       <SelectItem value="USD">USD ($)</SelectItem>
                       <SelectItem value="EUR">EUR (€)</SelectItem>
                       <SelectItem value="VES">VES (Bs)</SelectItem>
+                      <SelectItem value="CLP">CLP ($)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1029,6 +1030,7 @@ export function Accounts() {
                       <SelectItem value="USD">USD ($)</SelectItem>
                       <SelectItem value="EUR">EUR (€)</SelectItem>
                       <SelectItem value="VES">VES (Bs)</SelectItem>
+                      <SelectItem value="CLP">CLP ($)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

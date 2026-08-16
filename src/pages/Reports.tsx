@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { jsPDF } from 'jspdf'
 import * as XLSX from 'xlsx'
@@ -7,6 +8,7 @@ import { EmptyState } from '@/components/EmptyState'
 import { DonutChart, MonthlyBars } from '@/components/charts/charts'
 import { useAuth } from '@/components/auth/auth-context'
 import { SelectMovements } from '@/backend/services/Movements-Services/Select.Movements'
+import { DeleteMovement } from '@/backend/services/Movements-Services/Delete.Movement'
 import { SelectAccounts } from '@/backend/services/Accounts-Services/Select.Accounts'
 import { GetCurrencySettings } from '@/backend/services/Currency-Services/Get.CurrencySettings'
 import {
@@ -37,7 +39,7 @@ const TYPE_STYLES: Record<string, string> = {
 const PAGE_SIZE = 6
 
 function formatAmount(mount: number | string, currency: string, isIngreso: boolean) {
-  const symbol = currency === 'EUR' ? '€' : currency === 'VES' ? 'Bs ' : '$'
+  const symbol = currencySymbol(currency)
   const base = `${Number(mount).toFixed(2)}`
   return `${isIngreso ? '+' : '-'}${symbol}${base}`
 }
@@ -65,6 +67,7 @@ function restanteDeCuenta(a: any): number {
 
 export function Reports() {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [rows, setRows] = useState<any[]>([])
   const [porPagar, setPorPagar] = useState<any[]>([])
   const [porCobrar, setPorCobrar] = useState<any[]>([])
@@ -75,6 +78,8 @@ export function Reports() {
   const [pagina, setPagina] = useState(0)
   const [verTodos, setVerTodos] = useState(false)
   const [settings, setSettings] = useState<CurrencySettings>(DEFAULT_CURRENCY_SETTINGS)
+  const [eliminando, setEliminando] = useState<HistoryRow | null>(null)
+  const [eliminandoId, setEliminandoId] = useState<string | null>(null)
 
   const cargar = () => {
     if (!user) return
@@ -207,6 +212,20 @@ export function Reports() {
   const totalPaginas = Math.max(1, Math.ceil(history.length / PAGE_SIZE))
   const paginaActual = Math.min(pagina, totalPaginas - 1)
   const historyPagina = verTodos ? history : history.slice(paginaActual * PAGE_SIZE, paginaActual * PAGE_SIZE + PAGE_SIZE)
+
+  const confirmarEliminar = async () => {
+    if (!eliminando || !user) return
+    setEliminandoId(eliminando.id)
+    const result = await DeleteMovement({ id: eliminando.id, userId: user.id })
+    setEliminandoId(null)
+    if (!result.ok) {
+      toast.error(result.error ?? 'No se pudo eliminar el movimiento.')
+      return
+    }
+    toast.success('Movimiento eliminado.')
+    setEliminando(null)
+    cargar()
+  }
 
   const periodo = fechaDesde && fechaHasta ? `${fechaDesde} — ${fechaHasta}` : fechaDesde ? `desde ${fechaDesde}` : fechaHasta ? `hasta ${fechaHasta}` : 'todo el período'
 
@@ -566,12 +585,13 @@ export function Reports() {
           {/* Pseudo-table / List layout */}
           <div className="space-y-2">
             {/* Header */}
-            <div className="grid grid-cols-5 gap-4 px-4 py-2 text-xs font-semibold text-on-surface-variant uppercase tracking-wider md:grid">
+            <div className="grid grid-cols-6 gap-4 px-4 py-2 text-xs font-semibold text-on-surface-variant uppercase tracking-wider md:grid">
               <div>Fecha</div>
               <div>Tipo</div>
               <div>Categoría</div>
               <div>Descripción</div>
               <div className="text-right">Monto / Métrica</div>
+              <div className="text-right hidden md:block">Acciones</div>
             </div>
 
             {/* Items */}
@@ -585,7 +605,7 @@ export function Reports() {
               historyPagina.map((row) => (
                 <div
                   key={row.id}
-                  className="grid grid-cols-1 md:grid-cols-5 gap-2 md:gap-4 p-4 rounded-lg bg-surface hover:bg-surface-container-low transition-colors ghost-border items-center"
+                  className="grid grid-cols-1 md:grid-cols-6 gap-2 md:gap-4 p-4 rounded-lg bg-surface hover:bg-surface-container-low transition-colors ghost-border items-center"
                 >
                   <div className="text-sm text-on-surface-variant">
                     <span className="md:hidden font-semibold mr-2">Fecha:</span>
@@ -609,6 +629,22 @@ export function Reports() {
                   <div className={`text-sm md:text-right font-display font-medium ${row.value}`}>
                     <span className="md:hidden text-on-surface-variant font-normal mr-2">Monto:</span>
                     {row.amount}
+                  </div>
+                  <div className="flex items-center gap-1 md:justify-end">
+                    <button
+                      aria-label="Editar movimiento"
+                      className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors active:scale-95"
+                      onClick={() => navigate(`/movimientos/editar/${row.id}`)}
+                    >
+                      <Icon name="edit" size={18} />
+                    </button>
+                    <button
+                      aria-label="Eliminar movimiento"
+                      className="p-1.5 rounded-lg text-on-surface-variant hover:bg-error/10 hover:text-error transition-colors active:scale-95"
+                      onClick={() => setEliminando(row)}
+                    >
+                      <Icon name="delete" size={18} />
+                    </button>
                   </div>
                 </div>
               ))
@@ -657,6 +693,43 @@ export function Reports() {
           )}
         </div>
       </div>
+
+      {/* Eliminar Movimiento Modal */}
+      {eliminando && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setEliminando(null)}
+        >
+          <div
+            className="w-full max-w-sm bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_24px_60px_rgba(11,28,48,0.25)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="font-display font-semibold text-xl text-on-surface mb-2">¿Eliminar movimiento?</h3>
+            <p className="text-sm text-on-surface-variant mb-2">
+              <span className="font-medium text-on-surface">{eliminando.description}</span>
+            </p>
+            <p className="text-sm text-on-surface-variant">
+              El movimiento se eliminará permanentemente. Esta acción no se puede deshacer.
+            </p>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                className="px-4 py-2 rounded-lg text-sm font-medium text-on-surface-variant hover:bg-surface-container transition-colors"
+                onClick={() => setEliminando(null)}
+              >
+                Cancelar
+              </button>
+              <button
+                className="px-5 py-2 rounded-lg text-sm font-semibold bg-error text-on-error hover:bg-error/90 transition-colors disabled:opacity-60"
+                disabled={eliminandoId === eliminando.id}
+                onClick={confirmarEliminar}
+              >
+                {eliminandoId === eliminando.id ? 'Eliminando…' : 'Eliminar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
