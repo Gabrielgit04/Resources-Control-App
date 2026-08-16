@@ -1,13 +1,17 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Icon } from '@/components/Icon'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { RouteTransition } from '@/components/RouteTransition'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useAuth } from '@/components/auth/auth-context'
 import { isFreeText, isPositiveNumber, parseDecimal } from '@/lib/validation'
+import { currencySymbol } from '@/lib/currency'
 import { CreateMovement } from '@/backend/services/Movements-Services/Create.Movement'
+import { UpdateMovement } from '@/backend/services/Movements-Services/Update.Movement'
+import { SelectMovements } from '@/backend/services/Movements-Services/Select.Movements'
 import type { UserMovements } from '@/backend/utils/types'
 
 type TxType = 'egreso' | 'ingreso'
@@ -27,17 +31,52 @@ const CATEGORIES_EGRESO = [
   { name: 'Contingencia', icon: 'savings' },
 ]
 
-export function NuevoMovimiento() {
+export function NuevoMovimiento({ movementId }: { movementId?: string }) {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const esEdicion = Boolean(movementId)
   const [amount, setAmount] = useState('')
   const [type, setType] = useState<TxType>('egreso')
   const [category, setCategory] = useState(0)
   const [currency, setCurrency] = useState('USD')
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
-  const sign = currency === 'USD' ? '$' : currency === 'EUR' ? '€' : 'Bs'
+  const [loading, setLoading] = useState(esEdicion)
+  const sign = currencySymbol(currency)
   const CATEGORIES = type === 'ingreso' ? CATEGORIES_INGRESO : CATEGORIES_EGRESO
+
+  useEffect(() => {
+    if (!movementId || !user) return
+    let activo = true
+    SelectMovements(user.id).then((res) => {
+      if (!activo) return
+      if (!res.ok) {
+        setLoading(false)
+        toast.error(res.error ?? 'No se pudo cargar el movimiento.')
+        navigate('/dashboard', { replace: true })
+        return
+      }
+      const m = (res.data as any[]).find((x) => String(x.id) === movementId)
+      if (!m) {
+        setLoading(false)
+        toast.error('Movimiento no encontrado.')
+        navigate('/dashboard', { replace: true })
+        return
+      }
+      const tipo: TxType = m.type === 'ingreso' ? 'ingreso' : 'egreso'
+      setType(tipo)
+      setCurrency(m.currency ?? 'USD')
+      setAmount(String(Number(m.mount)))
+      setNotes(m.description ?? '')
+      const lista = tipo === 'ingreso' ? CATEGORIES_INGRESO : CATEGORIES_EGRESO
+      const idx = lista.findIndex((c) => c.name === m.category)
+      setCategory(idx === -1 ? 0 : idx)
+      setLoading(false)
+    })
+    return () => {
+      activo = false
+    }
+  }, [movementId, user, navigate])
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -56,31 +95,44 @@ export function NuevoMovimiento() {
       return
     }
 
-    const movement: UserMovements = {
-      userId: user.id,
-      mount: monto,
-      description: notes.trim(),
-      type,
-      category: CATEGORIES[category].name as UserMovements['category'],
-      currency,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }
-
     setSaving(true)
-    const result = await CreateMovement(movement)
-    setSaving(false)
-
-    if (!result.ok) {
-      toast.error(result.error ?? 'No se pudo registrar el movimiento.')
-      return
+    if (esEdicion && movementId) {
+      const result = await UpdateMovement({
+        id: movementId,
+        userId: user.id,
+        mount: monto,
+        description: notes.trim(),
+        type,
+        category: CATEGORIES[category].name,
+        currency,
+      })
+      setSaving(false)
+      if (!result.ok) {
+        toast.error(result.error ?? 'No se pudo actualizar el movimiento.')
+        return
+      }
+      toast.success('Movimiento actualizado.')
+    } else {
+      const movement: UserMovements = {
+        userId: user.id,
+        mount: monto,
+        description: notes.trim(),
+        type,
+        category: CATEGORIES[category].name as UserMovements['category'],
+        currency,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+      const result = await CreateMovement(movement)
+      setSaving(false)
+      if (!result.ok) {
+        toast.error(result.error ?? 'No se pudo registrar el movimiento.')
+        return
+      }
+      toast.success('Movimiento registrado.')
     }
-
-    toast.success('Movimiento registrado.')
-    navigate('/dashboard')
+    navigate(-1)
   }
-
-
 
   return (
     <div className="bg-surface text-on-surface font-body antialiased min-h-screen flex flex-col relative selection:bg-primary-container selection:text-on-primary-container">
@@ -97,7 +149,9 @@ export function NuevoMovimiento() {
           >
             <Icon name="arrow_back" />
           </button>
-          <h1 className="font-headline text-lg font-bold tracking-tight text-on-surface">Nuevo Movimiento</h1>
+          <h1 className="font-headline text-lg font-bold tracking-tight text-on-surface">
+            {esEdicion ? 'Editar Movimiento' : 'Nuevo Movimiento'}
+          </h1>
           <div className="w-10" />
         </div>
       </header>
@@ -105,6 +159,20 @@ export function NuevoMovimiento() {
       {/* Main Content Canvas */}
       <RouteTransition>
         <main className="flex-1 w-full max-w-2xl mx-auto pt-20 pb-32 px-6 flex flex-col space-y-10 relative z-10">
+        {loading ? (
+          <div className="space-y-8 pt-8">
+            <div className="flex flex-col items-center space-y-4">
+              <Skeleton className="h-8 w-28 rounded-full" />
+              <Skeleton className="h-20 w-56 rounded-xl" />
+            </div>
+            <Skeleton className="h-14 w-full rounded-2xl" />
+            <div className="grid grid-cols-2 gap-4">
+              <Skeleton className="h-28 w-full rounded-[1.25rem]" />
+              <Skeleton className="h-28 w-full rounded-[1.25rem]" />
+            </div>
+          </div>
+        ) : (
+        <>
         {/* Amount & Currency Section */}
         <section className="flex flex-col items-center justify-center pt-8 pb-4">
           {/* Currency Selector */}
@@ -117,6 +185,7 @@ export function NuevoMovimiento() {
                 <SelectItem value="USD">USD</SelectItem>
                 <SelectItem value="EUR">EUR</SelectItem>
                 <SelectItem value="VES">VES</SelectItem>
+                <SelectItem value="CLP">CLP</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -233,15 +302,19 @@ export function NuevoMovimiento() {
         </section>
 
         {/* Security / Immutability Note */}
-        <section className="w-full pt-2">
-          <div className="flex items-start p-4 rounded-2xl bg-surface-container/50 border border-outline-variant/20">
-            <Icon name="lock" fill size={20} className="text-on-surface-variant mr-3 mt-0.5" />
-            <p className="font-body text-xs text-on-surface-variant leading-relaxed">
-              Este registro es inmutable por seguridad de auditoría. Una vez registrado, cualquier corrección requerirá
-              un movimiento de ajuste manual.
-            </p>
-          </div>
-        </section>
+        {!esEdicion && (
+          <section className="w-full pt-2">
+            <div className="flex items-start p-4 rounded-2xl bg-surface-container/50 border border-outline-variant/20">
+              <Icon name="lock" fill size={20} className="text-on-surface-variant mr-3 mt-0.5" />
+              <p className="font-body text-xs text-on-surface-variant leading-relaxed">
+                Este registro es inmutable por seguridad de auditoría. Una vez registrado, cualquier corrección requerirá
+                un movimiento de ajuste manual.
+              </p>
+            </div>
+          </section>
+        )}
+        </>
+        )}
       </main>
       </RouteTransition>
 
@@ -251,19 +324,24 @@ export function NuevoMovimiento() {
           <div className="max-w-2xl mx-auto w-full">
             <button
               className="w-full bg-primary hover:bg-primary-container text-on-primary font-headline font-bold text-lg py-4 rounded-[1.25rem] shadow-[0_8px_30px_rgba(0,109,50,0.25)] hover:shadow-[0_8px_40px_rgba(0,209,102,0.35)] active:scale-[0.98] transition-all duration-300 flex items-center justify-center space-x-2 disabled:opacity-60 disabled:pointer-events-none"
-              disabled={saving}
+              disabled={saving || loading}
               type="submit"
             >
-              {saving ? (
+              {saving || loading ? (
                 <Icon name="progress_activity" size={20} className="animate-spin" />
               ) : (
-                <Icon name="check_circle" fill size={20} />
+                <Icon name={esEdicion ? 'save' : 'check_circle'} fill={!esEdicion} size={20} />
               )}
-              <span>{saving ? 'Registrando...' : 'Registrar Movimiento'}</span>
+              <span>{saving ? 'Guardando...' : loading ? 'Cargando...' : esEdicion ? 'Guardar Cambios' : 'Registrar Movimiento'}</span>
             </button>
           </div>
         </div>
       </form>
     </div>
   )
+}
+
+export function EditarMovimiento() {
+  const { id } = useParams<{ id: string }>()
+  return <NuevoMovimiento movementId={id} />
 }
