@@ -5,6 +5,7 @@ import { Icon } from '@/components/Icon'
 import { EmptyState } from '@/components/EmptyState'
 import { AnimatedNumber } from '@/components/ui/AnimatedNumber'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Modal } from '@/components/ui/modal'
 import { DonutChart, MonthlyBars } from '@/components/charts/charts'
 import { useAuth } from '@/components/auth/auth-context'
 import { SelectMovements } from '@/backend/services/Movements-Services/Select.Movements'
@@ -535,15 +536,14 @@ export function Dashboard() {
       </Link>
 
       {/* Eliminar Movimiento Modal */}
-      {eliminando && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          onClick={() => setEliminando(null)}
-        >
-          <div
-            className="w-full max-w-sm bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_24px_60px_rgba(11,28,48,0.25)]"
-            onClick={(e) => e.stopPropagation()}
-          >
+      <Modal
+        open={eliminando !== null}
+        onClose={() => setEliminando(null)}
+        panelClassName="w-full max-w-sm my-auto bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_24px_60px_rgba(11,28,48,0.25)]"
+        payload={eliminando}
+      >
+        {(eliminando) => (
+          <>
             <h3 className="font-display font-semibold text-xl text-on-surface mb-2">¿Eliminar movimiento?</h3>
             <p className="text-sm text-on-surface-variant mb-2">
               <span className="font-medium text-on-surface">{eliminando.description}</span>
@@ -567,9 +567,9 @@ export function Dashboard() {
                 {eliminandoId === eliminando.id ? 'Eliminando…' : 'Eliminar'}
               </button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Modal>
     </div>
   )
 }
