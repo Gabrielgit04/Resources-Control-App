@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { Icon } from '@/components/Icon'
 import { EmptyState } from '@/components/EmptyState'
+import { Modal } from '@/components/ui/modal'
 import { useAuth } from '@/components/auth/auth-context'
 import { useIsAdmin } from '@/hooks/use-is-admin'
 import { DeleteUser, isOnline, ListUsers, SuspendUser, type AdminUser } from '@/backend/services/Admin-Services/AdminUsers'
@@ -243,15 +244,14 @@ export function Admin() {
       </div>
 
       {/* Confirm delete modal */}
-      {borrando && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          onClick={() => setBorrando(null)}
-        >
-          <div
-            className="w-full max-w-sm bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_24px_60px_rgba(11,28,48,0.25)]"
-            onClick={(e) => e.stopPropagation()}
-          >
+      <Modal
+        open={borrando !== null}
+        onClose={() => setBorrando(null)}
+        panelClassName="w-full max-w-sm my-auto bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_24px_60px_rgba(11,28,48,0.25)]"
+        payload={borrando}
+      >
+        {(borrando) => (
+          <>
             <div className="flex items-start gap-3 mb-4">
               <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-error/10 text-error flex-shrink-0">
                 <Icon name="warning" />
@@ -279,22 +279,21 @@ export function Admin() {
                 {procesando ? 'Eliminando…' : 'Eliminar usuario'}
               </button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Modal>
 
       {/* Suspend user modal */}
-      {suspendiendo && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          onClick={() => {
-            if (!procesandoSusp) setSuspendiendo(null)
-          }}
-        >
-          <div
-            className="w-full max-w-sm bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_24px_60px_rgba(11,28,48,0.25)]"
-            onClick={(e) => e.stopPropagation()}
-          >
+      <Modal
+        open={suspendiendo !== null}
+        onClose={() => {
+          if (!procesandoSusp) setSuspendiendo(null)
+        }}
+        panelClassName="w-full max-w-sm my-auto bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_24px_60px_rgba(11,28,48,0.25)]"
+        payload={suspendiendo}
+      >
+        {(suspendiendo) => (
+          <>
             <div className="flex items-start gap-3 mb-4">
               <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-error-container/60 text-on-error-container flex-shrink-0">
                 <Icon name="block" />
@@ -337,20 +336,19 @@ export function Admin() {
                 {procesandoSusp ? 'Suspendiendo…' : 'Suspender'}
               </button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Modal>
 
       {/* Reactivate user modal */}
-      {reactivando && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          onClick={() => setReactivando(null)}
-        >
-          <div
-            className="w-full max-w-sm bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_24px_60px_rgba(11,28,48,0.25)]"
-            onClick={(e) => e.stopPropagation()}
-          >
+      <Modal
+        open={reactivando !== null}
+        onClose={() => setReactivando(null)}
+        panelClassName="w-full max-w-sm my-auto bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_24px_60px_rgba(11,28,48,0.25)]"
+        payload={reactivando}
+      >
+        {(reactivando) => (
+          <>
             <div className="flex items-start gap-3 mb-4">
               <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-primary flex-shrink-0">
                 <Icon name="unarchive" />
@@ -379,9 +377,9 @@ export function Admin() {
                 {procesandoSusp ? 'Reactivando…' : 'Reactivar'}
               </button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Modal>
     </div>
   )
 }

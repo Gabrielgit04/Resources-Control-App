@@ -4,6 +4,7 @@ import { APP_NAME } from '@/config'
 import { Icon } from '@/components/Icon'
 import { EmptyState } from '@/components/EmptyState'
 import { BottomNav } from '@/components/layout/BottomNav'
+import { Modal } from '@/components/ui/modal'
 import { RouteTransition } from '@/components/RouteTransition'
 import { useAuth } from '@/components/auth/auth-context'
 import { SelectMovements } from '@/backend/services/Movements-Services/Select.Movements'
@@ -384,15 +385,14 @@ export function Budget() {
       </RouteTransition>
 
       {/* Dialog de operaciones por categoría */}
-      {dialogo && grupoActivo && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          onClick={() => setDialogo(null)}
-        >
-          <div
-            className="w-full max-w-lg bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_24px_60px_rgba(11,28,48,0.25)] max-h-[85vh] flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
+      <Modal
+        open={!!(dialogo && grupoActivo)}
+        onClose={() => setDialogo(null)}
+        panelClassName="w-full max-w-lg my-auto bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_24px_60px_rgba(11,28,48,0.25)] max-h-[85vh] flex flex-col"
+        payload={grupoActivo}
+      >
+        {(grupoActivo) => (
+          <>
             <div className="flex justify-between items-start mb-1">
               <h3 className="font-display font-semibold text-xl text-on-surface">{grupoActivo.titulo}</h3>
               <button
@@ -441,9 +441,9 @@ export function Budget() {
                 Cerrar
               </button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Modal>
 
       <BottomNav />
     </div>

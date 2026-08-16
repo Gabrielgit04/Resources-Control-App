@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { Icon } from '@/components/Icon'
 import { BottomNav } from '@/components/layout/BottomNav'
 import { SelectRow } from '@/components/ui/select'
+import { Modal } from '@/components/ui/modal'
 import { ChangePasswordForm } from '@/components/auth/ChangePasswordForm'
 import { useAuth } from '@/components/auth/auth-context'
 import { useProfile } from '@/hooks/use-profile'
@@ -485,15 +486,11 @@ export function Profile() {
       <BottomNav />
 
       {/* Teléfono Dialog */}
-      {phoneDialog && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          onClick={() => setPhoneDialog(false)}
-        >
-          <div
-            className="w-full max-w-sm bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_24px_60px_rgba(11,28,48,0.25)]"
-            onClick={(e) => e.stopPropagation()}
-          >
+      <Modal
+        open={phoneDialog}
+        onClose={() => setPhoneDialog(false)}
+        panelClassName="w-full max-w-sm my-auto bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_24px_60px_rgba(11,28,48,0.25)]"
+      >
             <h3 className="font-display font-semibold text-xl text-on-surface mb-1">
               {telefono === '—' ? 'Agregar teléfono' : 'Editar teléfono'}
             </h3>
@@ -536,20 +533,14 @@ export function Profile() {
                 {telefono === '—' ? 'Agregar' : 'Guardar'}
               </button>
             </div>
-          </div>
-        </div>
-      )}
+      </Modal>
 
       {/* Name Dialog */}
-      {nameDialog && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          onClick={() => setNameDialog(false)}
-        >
-          <div
-            className="w-full max-w-sm bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_24px_60px_rgba(11,28,48,0.25)]"
-            onClick={(e) => e.stopPropagation()}
-          >
+      <Modal
+        open={nameDialog}
+        onClose={() => setNameDialog(false)}
+        panelClassName="w-full max-w-sm my-auto bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_24px_60px_rgba(11,28,48,0.25)]"
+      >
             <h3 className="font-display font-semibold text-xl text-on-surface mb-1">Editar nombre</h3>
             <p className="text-sm text-on-surface-variant mb-5">
               Cambia tu nombre completo. Este se mostrará en tu perfil y en los movimientos que crees.
@@ -590,20 +581,14 @@ export function Profile() {
                 Guardar
               </button>
             </div>
-          </div>
-        </div>
-      )}
+      </Modal>
 
       {/* Email Dialog */}
-      {emailDialog && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          onClick={() => setEmailDialog(false)}
-        >
-          <div
-            className="w-full max-w-sm bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_24px_60px_rgba(11,28,48,0.25)]"
-            onClick={(e) => e.stopPropagation()}
-          >
+      <Modal
+        open={emailDialog}
+        onClose={() => setEmailDialog(false)}
+        panelClassName="w-full max-w-sm my-auto bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_24px_60px_rgba(11,28,48,0.25)]"
+      >
             <h3 className="font-display font-semibold text-xl text-on-surface mb-1">Editar correo electrónico</h3>
             <p className="text-sm text-on-surface-variant mb-5">
               Modifica tu dirección de correo electrónico.
@@ -644,20 +629,14 @@ export function Profile() {
                 Guardar
               </button>
             </div>
-          </div>
-        </div>
-      )}
+      </Modal>
 
       {/* Change Password Dialog */}
-      {passwordDialog && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          onClick={() => setPasswordDialog(false)}
-        >
-          <div
-            className="w-full max-w-sm bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_24px_60px_rgba(11,28,48,0.25)]"
-            onClick={(e) => e.stopPropagation()}
-          >
+      <Modal
+        open={passwordDialog}
+        onClose={() => setPasswordDialog(false)}
+        panelClassName="w-full max-w-sm my-auto bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_24px_60px_rgba(11,28,48,0.25)]"
+      >
             <h3 className="font-display font-semibold text-xl text-on-surface mb-1">Cambiar contraseña</h3>
             <p className="text-sm text-on-surface-variant mb-5">
               Establece una contraseña nueva. Se cerrarán tus otras sesiones, pero esta se mantiene.
@@ -666,9 +645,7 @@ export function Profile() {
               successMessage="Contraseña actualizada."
               onSuccess={() => setPasswordDialog(false)}
             />
-          </div>
-        </div>
-      )}
+      </Modal>
     </div>
   )
 }
