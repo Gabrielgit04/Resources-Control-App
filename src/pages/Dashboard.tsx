@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 import { Icon } from '@/components/Icon'
 import { EmptyState } from '@/components/EmptyState'
 import { AnimatedNumber } from '@/components/ui/AnimatedNumber'
@@ -7,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { DonutChart, MonthlyBars } from '@/components/charts/charts'
 import { useAuth } from '@/components/auth/auth-context'
 import { SelectMovements } from '@/backend/services/Movements-Services/Select.Movements'
+import { DeleteMovement } from '@/backend/services/Movements-Services/Delete.Movement'
 import { SelectAccounts } from '@/backend/services/Accounts-Services/Select.Accounts'
 import { GetCurrencySettings } from '@/backend/services/Currency-Services/Get.CurrencySettings'
 import {
@@ -17,7 +19,6 @@ import {
   missingRates,
   type CurrencySettings,
 } from '@/lib/currency'
-
 interface RecentRow {
   id: string
   date: string
@@ -41,13 +42,14 @@ interface Vencimiento {
 const PAGE_SIZE = 6
 
 function formatAmount(mount: number | string, currency: string, isIngreso: boolean) {
-  const symbol = currency === 'EUR' ? '€' : currency === 'VES' ? 'Bs ' : '$'
+  const symbol = currencySymbol(currency)
   const base = `${Number(mount).toFixed(2)}`
   return `${isIngreso ? '+' : '-'}${symbol}${base}`
 }
 
 export function Dashboard() {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [recent, setRecent] = useState<RecentRow[]>([])
   const [items, setItems] = useState<any[]>([])
   const [ingresos, setIngresos] = useState(0)
@@ -57,8 +59,10 @@ export function Dashboard() {
   const [vencimientos, setVencimientos] = useState<Vencimiento[]>([])
   const [recentPage, setRecentPage] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [eliminando, setEliminando] = useState<RecentRow | null>(null)
+  const [eliminandoId, setEliminandoId] = useState<string | null>(null)
 
-  useEffect(() => {
+  const cargar = useCallback(() => {
     if (!user) return
     let activo = true
     setLoading(true)
@@ -110,6 +114,8 @@ export function Dashboard() {
     }
   }, [user])
 
+  useEffect(() => cargar(), [cargar])
+
   const balance = ingresos - egresos
   const symbol = currencySymbol(settings.baseCurrency)
 
@@ -153,6 +159,20 @@ export function Dashboard() {
 
   const formatFechaCorta = (iso: string) =>
     new Date(`${iso}T00:00:00`).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })
+
+  const confirmarEliminar = async () => {
+    if (!eliminando || !user) return
+    setEliminandoId(eliminando.id)
+    const result = await DeleteMovement({ id: eliminando.id, userId: user.id })
+    setEliminandoId(null)
+    if (!result.ok) {
+      toast.error(result.error ?? 'No se pudo eliminar el movimiento.')
+      return
+    }
+    toast.success('Movimiento eliminado.')
+    setEliminando(null)
+    cargar()
+  }
 
   const toBase = (m: any) => convertToBase(Number(m.mount), m.currency ?? 'USD', settings)
 
@@ -411,13 +431,14 @@ export function Dashboard() {
               {Array.from({ length: 4 }).map((_, i) => (
                 <div
                   key={i}
-                  className="grid grid-cols-1 md:grid-cols-5 gap-2 md:gap-4 p-4 rounded-lg bg-surface ghost-border items-center"
+                  className="grid grid-cols-1 md:grid-cols-6 gap-2 md:gap-4 p-4 rounded-lg bg-surface ghost-border items-center"
                 >
                   <Skeleton className="h-4 w-28" />
                   <Skeleton className="h-5 w-16 rounded-full" />
                   <Skeleton className="h-4 w-24" />
                   <Skeleton className="h-4 w-40" />
                   <Skeleton className="h-4 w-20 md:ml-auto" />
+                  <Skeleton className="h-4 w-16 md:ml-auto" />
                 </div>
               ))}
             </div>
@@ -431,7 +452,7 @@ export function Dashboard() {
             rowsPagina.map((row, i) => (
               <div
                 key={`${row.id}-${paginaActual}`}
-                className="grid grid-cols-1 md:grid-cols-5 gap-2 md:gap-4 p-4 rounded-lg bg-surface hover:bg-surface-container-low transition-colors ghost-border items-center animate-fade-in-up"
+                className="grid grid-cols-1 md:grid-cols-6 gap-2 md:gap-4 p-4 rounded-lg bg-surface hover:bg-surface-container-low transition-colors ghost-border items-center animate-fade-in-up"
                 style={{ animationDelay: `${i * 40}ms` }}
               >
                 <div className="text-sm text-on-surface-variant">
@@ -458,6 +479,22 @@ export function Dashboard() {
                 <div className={`text-sm md:text-right font-display font-medium ${row.value}`}>
                   <span className="md:hidden text-on-surface-variant font-normal mr-2">Monto:</span>
                   {row.amount}
+                </div>
+                <div className="flex items-center gap-1 md:justify-end">
+                  <button
+                    aria-label="Editar movimiento"
+                    className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors active:scale-95"
+                    onClick={() => navigate(`/movimientos/editar/${row.id}`)}
+                  >
+                    <Icon name="edit" size={18} />
+                  </button>
+                  <button
+                    aria-label="Eliminar movimiento"
+                    className="p-1.5 rounded-lg text-on-surface-variant hover:bg-error/10 hover:text-error transition-colors active:scale-95"
+                    onClick={() => setEliminando(row)}
+                  >
+                    <Icon name="delete" size={18} />
+                  </button>
                 </div>
               </div>
             ))
@@ -496,6 +533,43 @@ export function Dashboard() {
       >
         <Icon name="add" fill size={28} />
       </Link>
+
+      {/* Eliminar Movimiento Modal */}
+      {eliminando && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setEliminando(null)}
+        >
+          <div
+            className="w-full max-w-sm bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_24px_60px_rgba(11,28,48,0.25)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="font-display font-semibold text-xl text-on-surface mb-2">¿Eliminar movimiento?</h3>
+            <p className="text-sm text-on-surface-variant mb-2">
+              <span className="font-medium text-on-surface">{eliminando.description}</span>
+            </p>
+            <p className="text-sm text-on-surface-variant">
+              El movimiento se eliminará permanentemente. Esta acción no se puede deshacer.
+            </p>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                className="px-4 py-2 rounded-lg text-sm font-medium text-on-surface-variant hover:bg-surface-container transition-colors"
+                onClick={() => setEliminando(null)}
+              >
+                Cancelar
+              </button>
+              <button
+                className="px-5 py-2 rounded-lg text-sm font-semibold bg-error text-on-error hover:bg-error/90 transition-colors disabled:opacity-60"
+                disabled={eliminandoId === eliminando.id}
+                onClick={confirmarEliminar}
+              >
+                {eliminandoId === eliminando.id ? 'Eliminando…' : 'Eliminar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -10,7 +10,7 @@ import { Accounts } from '@/pages/Accounts'
 import { Dashboard } from '@/pages/Dashboard'
 import { Landing } from '@/pages/Landing'
 import { Login } from '@/pages/Login'
-import { NuevoMovimiento } from '@/pages/NewMovements'
+import { NuevoMovimiento, EditarMovimiento } from '@/pages/NewMovements'
 import { Profile } from '@/pages/Profile'
 import { RecoverPassword } from '@/pages/RecoverPassword'
 import { ResetPassword } from '@/pages/ResetPassword'
@@ -48,6 +48,14 @@ export default function App() {
             element={
               <RequireAuth>
                 <NuevoMovimiento />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/movimientos/editar/:id"
+            element={
+              <RequireAuth>
+                <EditarMovimiento />
               </RequireAuth>
             }
           />

@@ -1,5 +1,6 @@
 import { supabase } from '@/server/supabase.service'
 import { invalidateAll } from '@/lib/query-cache'
+import { isSupportedCurrency } from '@/lib/currency'
 
 export async function UpsertCurrencySettings(data: {
   userId: string
@@ -11,7 +12,7 @@ export async function UpsertCurrencySettings(data: {
   if (!userId) {
     return { ok: false, error: 'Usuario no autenticado.' }
   }
-  if (!['USD', 'EUR', 'VES'].includes(baseCurrency)) {
+  if (!isSupportedCurrency(baseCurrency)) {
     return { ok: false, error: 'Moneda base inválida.' }
   }
   for (const value of Object.values(rates)) {
