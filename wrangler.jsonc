@@ -1,7 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "app-finances",
-  "compatibility_date": "2026-08-14",
+  "name": "resources-control-app",  "compatibility_date": "2026-08-14",
   "observability": {
     "enabled": true
   },
