@@ -1,8 +1,21 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "resources-control-app",  "compatibility_date": "2026-08-14",
+
   "observability": {
-    "enabled": true
+    "enabled": false,
+    "head_sampling_rate": 1,
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "persist": true,
+      "invocation_logs": true
+    },
+    "traces": {
+      "enabled": false,
+      "persist": true,
+      "head_sampling_rate": 1
+    }
   },
   "assets": {
     "not_found_handling": "single-page-application"
