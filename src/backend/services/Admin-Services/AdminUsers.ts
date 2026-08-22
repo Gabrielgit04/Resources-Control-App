@@ -10,6 +10,9 @@ export interface AdminUser {
   confirmed: boolean
   suspended: boolean
   lastSeenAt: string | null
+  movementsCount: number
+  receivablesCount: number
+  payablesCount: number
 }
 
 /** Ventana (ms) para considerar "conectado" a un usuario según su last_seen_at. */
@@ -36,6 +39,9 @@ interface AdminUserRow {
   confirmed: boolean
   suspended: boolean
   last_seen_at: string | null
+  movements_count?: number | string | null
+  receivables_count?: number | string | null
+  payables_count?: number | string | null
 }
 
 function mapRow(u: AdminUserRow): AdminUser {
@@ -49,6 +55,9 @@ function mapRow(u: AdminUserRow): AdminUser {
     confirmed: Boolean(u.confirmed),
     suspended: Boolean(u.suspended),
     lastSeenAt: u.last_seen_at,
+    movementsCount: Number(u.movements_count ?? 0),
+    receivablesCount: Number(u.receivables_count ?? 0),
+    payablesCount: Number(u.payables_count ?? 0),
   }
 }
 
