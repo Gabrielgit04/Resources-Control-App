@@ -29,6 +29,7 @@ export function Admin() {
   const [reactivando, setReactivando] = useState<AdminUser | null>(null)
   const [razon, setRazon] = useState('')
   const [procesandoSusp, setProcesandoSusp] = useState(false)
+  const [menuAbiertoId, setMenuAbiertoId] = useState<string | null>(null)
 
   const cargar = useCallback(async () => {
     setLoading(true)
@@ -181,19 +182,33 @@ export function Admin() {
                   </p>
                   <p className="text-xs text-on-surface-variant truncate">{u.email}</p>
                 </div>
-                <div className="text-sm text-on-surface-variant">
+                <div className="min-w-0 text-sm text-on-surface-variant">
                   <span className="md:hidden font-semibold mr-2">Teléfono:</span>
                   {u.phone || '—'}
                 </div>
-                <div className="text-sm text-on-surface-variant">
-                  <span className="md:hidden font-semibold mr-2">Registro:</span>
-                  {formatFecha(u.createdAt)}
-                </div>
-                <div className="text-sm text-on-surface-variant">
+                <div className="min-w-0 text-sm text-on-surface-variant whitespace-nowrap overflow-hidden text-ellipsis">
                   <span className="md:hidden font-semibold mr-2">Último acceso:</span>
                   {formatFecha(u.lastSignInAt)}
                 </div>
-                <div className="flex items-center justify-end gap-2">
+                <div className="flex items-center gap-x-3 gap-y-1 text-sm">
+                  <span className="md:hidden font-semibold mr-0 w-full">Actividad:</span>
+                  <span
+                    className="inline-flex shrink-0 items-center gap-1 text-on-surface-variant"
+                    title="Movimientos registrados"
+                  >
+                    <Icon name="swap_horiz" size={16} />
+                    {u.movementsCount}
+                  </span>
+                  <span className="inline-flex shrink-0 items-center gap-1 text-primary" title="Cuentas por cobrar">
+                    <Icon name="trending_up" size={16} />
+                    {u.receivablesCount}
+                  </span>
+                  <span className="inline-flex shrink-0 items-center gap-1 text-error" title="Cuentas por pagar">
+                    <Icon name="trending_down" size={16} />
+                    {u.payablesCount}
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center justify-end gap-2 min-w-0">
                   <span
                     className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${
                       u.suspended
@@ -206,35 +221,60 @@ export function Admin() {
                     {u.suspended ? 'Suspendido' : u.confirmed ? 'Confirmado' : 'Pendiente'}
                   </span>
                   {u.id !== user?.id && (
-                    <>
-                      {u.suspended ? (
-                        <button
-                          className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-primary-container text-on-primary-container hover:bg-primary/20"
-                          onClick={() => setReactivando(u)}
-                        >
-                          <Icon name="unarchive" size={16} />
-                          Activar
-                        </button>
-                      ) : (
-                        <button
-                          className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-error-container/60 text-on-error-container hover:bg-error-container"
-                          onClick={() => {
-                            setSuspendiendo(u)
-                            setRazon('')
-                          }}
-                        >
-                          <Icon name="block" size={16} />
-                          Suspender
-                        </button>
-                      )}
+                    <div className="relative shrink-0">
                       <button
-                        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-error/10 text-error hover:bg-error hover:text-on-error"
-                        onClick={() => setBorrando(u)}
+                        className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors"
+                        aria-label="Más acciones"
+                        aria-expanded={menuAbiertoId === u.id}
+                        onClick={() => setMenuAbiertoId(menuAbiertoId === u.id ? null : u.id)}
                       >
-                        <Icon name="delete" size={16} />
-                        Eliminar
+                        <Icon name="more_vert" size={20} />
                       </button>
-                    </>
+                      {menuAbiertoId === u.id && (
+                        <>
+                          <div
+                            className="fixed inset-0 z-40"
+                            onClick={() => setMenuAbiertoId(null)}
+                          />
+                          <div className="absolute right-0 top-full mt-1 z-50 w-44 bg-surface-container-lowest rounded-xl ghost-border shadow-[0_12px_36px_rgba(11,28,48,0.18)] py-1.5 overflow-hidden">
+                            {u.suspended ? (
+                              <button
+                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-on-surface hover:bg-surface-container-low transition-colors text-left"
+                                onClick={() => {
+                                  setMenuAbiertoId(null)
+                                  setReactivando(u)
+                                }}
+                              >
+                                <Icon name="unarchive" size={16} />
+                                Activar
+                              </button>
+                            ) : (
+                              <button
+                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-on-surface hover:bg-surface-container-low transition-colors text-left"
+                                onClick={() => {
+                                  setMenuAbiertoId(null)
+                                  setSuspendiendo(u)
+                                  setRazon('')
+                                }}
+                              >
+                                <Icon name="block" size={16} />
+                                Suspender
+                              </button>
+                            )}
+                            <button
+                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-error hover:bg-error/10 transition-colors text-left"
+                              onClick={() => {
+                                setMenuAbiertoId(null)
+                                setBorrando(u)
+                              }}
+                            >
+                              <Icon name="delete" size={16} />
+                              Eliminar
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>

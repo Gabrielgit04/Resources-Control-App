@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { Icon } from '@/components/Icon'
 import { EmptyState } from '@/components/EmptyState'
@@ -44,6 +44,22 @@ interface Cuenta {
   interesRate: number
   interesPeriod: InterestPeriod | null
   currency: string
+}
+
+interface ContraparteFrecuente {
+  clave: string
+  nombre: string
+  usos: number
+  ultimaVez: string
+  currency: string
+}
+
+function normalizar(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
 }
 
 function mesesEntre(inicio: Date, ahora: Date): number {
@@ -144,13 +160,53 @@ export function Accounts() {
   const [settings, setSettings] = useState<CurrencySettings>(DEFAULT_CURRENCY_SETTINGS)
   const [missing, setMissing] = useState<string[]>([])
   const [pagina, setPagina] = useState(0)
+  const [busqueda, setBusqueda] = useState('')
 
   const esPagar = tab === 'por-pagar'
   const tipo: AccountType = esPagar ? 'payable' : 'receivable'
   const cuentas = esPagar ? porPagar : porCobrar
-  const totalPaginas = Math.max(1, Math.ceil(cuentas.length / PAGE_SIZE))
+  const busquedaNormalizada = normalizar(busqueda)
+  const cuentasFiltradas = useMemo(
+    () =>
+      busquedaNormalizada
+        ? cuentas.filter((c) => normalizar(c.contraparte).includes(busquedaNormalizada))
+        : cuentas,
+    [cuentas, busquedaNormalizada]
+  )
+  const frecuentes = useMemo<ContraparteFrecuente[]>(() => {
+    const mapa = new Map<string, ContraparteFrecuente>()
+    for (const c of cuentas) {
+      const clave = normalizar(c.contraparte)
+      if (!clave) continue
+      const previa = mapa.get(clave)
+      if (previa) {
+        previa.usos += 1
+        if (c.creadaEn > previa.ultimaVez) {
+          previa.ultimaVez = c.creadaEn
+          previa.currency = c.currency
+        }
+      } else {
+        mapa.set(clave, {
+          clave,
+          nombre: c.contraparte.trim(),
+          usos: 1,
+          ultimaVez: c.creadaEn,
+          currency: c.currency,
+        })
+      }
+    }
+    return [...mapa.values()]
+      .sort((a, b) => b.usos - a.usos || (a.ultimaVez < b.ultimaVez ? 1 : -1))
+      .slice(0, 8)
+  }, [cuentas])
+  const sugerenciasFrecuentes = useMemo(() => {
+    const escritas = normalizar(form.contraparte)
+    if (!escritas) return frecuentes
+    return frecuentes.filter((f) => f.clave.includes(escritas))
+  }, [frecuentes, form.contraparte])
+  const totalPaginas = Math.max(1, Math.ceil(cuentasFiltradas.length / PAGE_SIZE))
   const paginaActual = Math.min(pagina, totalPaginas - 1)
-  const cuentasPagina = cuentas.slice(paginaActual * PAGE_SIZE, paginaActual * PAGE_SIZE + PAGE_SIZE)
+  const cuentasPagina = cuentasFiltradas.slice(paginaActual * PAGE_SIZE, paginaActual * PAGE_SIZE + PAGE_SIZE)
 
   const cargar = useCallback(async () => {
     if (!user) return
@@ -454,6 +510,7 @@ export function Accounts() {
           onClick={() => {
             setTab('por-pagar')
             setPagina(0)
+            setBusqueda('')
           }}
         >
           <Icon name="trending_down" size={18} />
@@ -466,6 +523,7 @@ export function Accounts() {
           onClick={() => {
             setTab('por-cobrar')
             setPagina(0)
+            setBusqueda('')
           }}
         >
           <Icon name="trending_up" size={18} />
@@ -530,9 +588,41 @@ export function Accounts() {
 
       {/* Table */}
       <div className="bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_4px_24px_rgba(11,28,48,0.02)]">
-        <h3 className="font-display font-semibold text-xl text-on-surface mb-6">
-          {esPagar ? 'Cuentas por Pagar' : 'Cuentas por Cobrar'}
-        </h3>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+          <h3 className="font-display font-semibold text-xl text-on-surface">
+            {esPagar ? 'Cuentas por Pagar' : 'Cuentas por Cobrar'}
+          </h3>
+          <div className="relative w-full sm:w-72">
+            <Icon
+              name="search"
+              size={18}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none"
+            />
+            <input
+              className="w-full pl-9 pr-9 py-2 bg-surface-container-low border border-outline-variant/30 rounded-lg text-sm text-on-surface placeholder:text-on-surface-variant/70 focus:ring-1 focus:ring-primary focus:border-primary transition-all"
+              placeholder={`Buscar ${esPagar ? 'proveedor' : 'cliente'}…`}
+              type="text"
+              value={busqueda}
+              onChange={(e) => {
+                setBusqueda(e.target.value)
+                setPagina(0)
+              }}
+            />
+            {busqueda && (
+              <button
+                type="button"
+                className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center justify-center w-6 h-6 rounded-md text-on-surface-variant hover:bg-surface-container transition-colors"
+                onClick={() => {
+                  setBusqueda('')
+                  setPagina(0)
+                }}
+                aria-label="Limpiar búsqueda"
+              >
+                <Icon name="close" size={14} />
+              </button>
+            )}
+          </div>
+        </div>
         <div className="space-y-2">
           {loading ? (
             <p className="text-sm text-on-surface-variant text-center py-8">Cargando cuentas…</p>
@@ -541,6 +631,12 @@ export function Accounts() {
               icon="receipt_long"
               title={`Aún no hay cuentas por ${esPagar ? 'pagar' : 'cobrar'}`}
               description="Crea una cuenta para empezar a llevar el control de tus pagos y cobros."
+            />
+          ) : cuentasFiltradas.length === 0 ? (
+            <EmptyState
+              icon="search_off"
+              title="Sin resultados"
+              description={`No se encontraron ${esPagar ? 'proveedores' : 'clientes'} que coincidan con "${busqueda.trim()}".`}
             />
           ) : (
             cuentasPagina.map((c) => {
@@ -686,8 +782,9 @@ export function Accounts() {
               Anterior
             </button>
             <span className="text-sm text-on-surface-variant">
-              {paginaActual * PAGE_SIZE + 1}–{Math.min((paginaActual + 1) * PAGE_SIZE, cuentas.length)} de{' '}
-              {cuentas.length}
+              {paginaActual * PAGE_SIZE + 1}–{Math.min((paginaActual + 1) * PAGE_SIZE, cuentasFiltradas.length)} de{' '}
+              {cuentasFiltradas.length}
+              {cuentasFiltradas.length !== cuentas.length && ` (de ${cuentas.length})`}
             </span>
             <button
               className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium text-on-surface-variant hover:bg-surface-container transition-colors disabled:opacity-40 disabled:pointer-events-none"
@@ -825,6 +922,56 @@ export function Accounts() {
                   onChange={(e) => setForm({ ...form, contraparte: e.target.value })}
                 />
               </div>
+              {sugerenciasFrecuentes.length > 0 && (
+                <>
+                  {/* Mobile: select compacto para no sobrecargar el formulario */}
+                  <div className="md:hidden">
+                    <label className="block text-sm font-medium text-on-surface mb-1.5">
+                      {esPagar ? 'Proveedor frecuente' : 'Cliente frecuente'}{' '}
+                      <span className="text-on-surface-variant font-normal">(opcional)</span>
+                    </label>
+                    <Select
+                      value={form.contraparte}
+                      onValueChange={(v) => {
+                        const f = sugerenciasFrecuentes.find((x) => x.nombre === v)
+                        if (f) setForm({ ...form, contraparte: f.nombre, currency: f.currency })
+                      }}
+                    >
+                      <SelectTrigger className="w-full h-[42px] rounded-lg border border-outline-variant/30 bg-surface-container-low px-3 text-sm font-medium text-on-surface shadow-none hover:bg-surface-container focus:ring-1 focus:ring-primary">
+                        <SelectValue placeholder={`Elegir ${esPagar ? 'proveedor' : 'cliente'}…`} />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl max-h-60">
+                        {sugerenciasFrecuentes.map((f) => (
+                          <SelectItem key={f.clave} value={f.nombre}>
+                            {f.nombre} ({f.usos})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {/* Desktop: chips */}
+                  <div className="hidden md:block">
+                    <p className="text-xs font-medium text-on-surface-variant mb-2">
+                      {esPagar ? 'Proveedores frecuentes' : 'Clientes frecuentes'}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {sugerenciasFrecuentes.map((f) => (
+                        <button
+                          key={f.clave}
+                          type="button"
+                          title={`${f.usos} ${f.usos === 1 ? 'cuenta registrada' : 'cuentas registradas'}`}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container-low border border-outline-variant/30 text-sm text-on-surface hover:bg-primary-container hover:text-on-primary-container hover:border-transparent transition-colors"
+                          onClick={() => setForm({ ...form, contraparte: f.nombre, currency: f.currency })}
+                        >
+                          <Icon name="history" size={14} />
+                          {f.nombre}
+                          <span className="text-[10px] font-semibold opacity-60">{f.usos}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
               <div>
                 <label className="block text-sm font-medium text-on-surface mb-1.5" htmlFor="cuenta-concepto">
                   Concepto
@@ -864,6 +1011,7 @@ export function Accounts() {
                       <SelectItem value="EUR">EUR (€)</SelectItem>
                       <SelectItem value="VES">VES (Bs)</SelectItem>
                       <SelectItem value="CLP">CLP ($)</SelectItem>
+                      <SelectItem value="COP">COP ($)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1024,6 +1172,7 @@ export function Accounts() {
                       <SelectItem value="EUR">EUR (€)</SelectItem>
                       <SelectItem value="VES">VES (Bs)</SelectItem>
                       <SelectItem value="CLP">CLP ($)</SelectItem>
+                      <SelectItem value="COP">COP ($)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
