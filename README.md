@@ -13,7 +13,7 @@ Aplicación web para registrar ingresos y egresos, controlar cuentas por cobrar/
 - **Automatizaciones** — recordatorios por correo de cuentas próximas a vencer (lanzados vía cron).
 - **Seguridad de auditoría** — autenticación con Supabase Auth, rate limiting en las Edge Functions y movimientos inmutables.
 - **Multi-dispositivo** — interfaz responsiva que se adapta a escritorio, tablet o celular.
-- **Multi-moneda** — soporta USD, EUR y VES con símbolos y conversiones.
+- **Multi-moneda** — soporta USD, EUR, VES, CLP y COP con símbolos y conversiones.
 - **Módulo de administración** — listado y borrado de usuarios (acceso solo superadmin).
 
 ## Stack
@@ -37,7 +37,6 @@ src/
   lib/              # utilidades (formato de moneda, cn, …)
 supabase/
   functions/        # Edge Functions (admin-users, send-reminders, _shared/middleware)
-  migrations/       # Esquema de BD (NO se sube a git)
 ```
 
 ## Requisitos
