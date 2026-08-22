@@ -19,6 +19,7 @@ const CURRENCY_OPTIONS = [
   { value: 'EUR', label: 'EUR (€)' },
   { value: 'VES', label: 'VES (Bs)' },
   { value: 'CLP', label: 'CLP ($)' },
+  { value: 'COP', label: 'COP ($)' },
 ] as const
 
 const NOTIFICATION_OPTIONS = [

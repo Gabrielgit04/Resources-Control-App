@@ -3,6 +3,7 @@ export const CURRENCIES = [
   { value: 'EUR', label: 'EUR (€)' },
   { value: 'VES', label: 'VES (Bs)' },
   { value: 'CLP', label: 'CLP ($)' },
+  { value: 'COP', label: 'COP ($)' },
 ] as const
 
 export type CurrencyCode = (typeof CURRENCIES)[number]['value']
@@ -34,10 +35,10 @@ export function currencySymbol(currency: string): string {
 
 /**
  * Monedas cuya tasa se expresa como "unidades de la moneda por 1 de la base"
- * (ej. 36 VES = 1 USD, 950 CLP = 1 USD). La conversión divide.
+ * (ej. 36 VES = 1 USD, 950 CLP = 1 USD, 4000 COP = 1 USD). La conversión divide.
  */
 export function rateUnitsPerBase(currency: string): boolean {
-  return currency === 'VES' || currency === 'CLP'
+  return currency === 'VES' || currency === 'CLP' || currency === 'COP'
 }
 
 export function convertToBase(
@@ -48,7 +49,7 @@ export function convertToBase(
   if (!currency || currency === settings.baseCurrency) return amount
   const rate = settings.rates[currency]
   if (typeof rate !== 'number' || Number.isNaN(rate) || rate <= 0) return 0
-  // VES y CLP se expresan como "unidades por 1 de la base" (ej. 36 Bs o 950 CLP = 1 USD) -> se divide.
+  // VES, CLP y COP se expresan como "unidades por 1 de la base" (ej. 36 Bs o 950 CLP = 1 USD) -> se divide.
   // EUR se expresa como "1 unidad vale X en la base" (ej. 1 EUR = 1.08 USD) -> se multiplica.
   if (rateUnitsPerBase(currency)) return amount / rate
   return amount * rate
