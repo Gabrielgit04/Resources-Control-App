@@ -186,6 +186,7 @@ export function NuevoMovimiento({ movementId }: { movementId?: string }) {
                 <SelectItem value="EUR">EUR</SelectItem>
                 <SelectItem value="VES">VES</SelectItem>
                 <SelectItem value="CLP">CLP</SelectItem>
+                <SelectItem value="COP">COP</SelectItem>
               </SelectContent>
             </Select>
           </div>
