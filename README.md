@@ -10,7 +10,6 @@ Aplicación web para registrar ingresos y egresos, controlar cuentas por cobrar/
 - **Cuentas por cobrar/pagar** — control de abonos, fechas de vencimiento, intereses e importes restantes.
 - **Reportes y exportación** — estados de resultado, balances e historial completo. Exporta a PDF, CSV y Excel con un clic.
 - **Presupuestos y proyecciones** — asigna capital por categorías y proyecta el flujo de caja mes a mes con alertas de límite.
-- **Automatizaciones** — recordatorios por correo de cuentas próximas a vencer (lanzados vía cron).
 - **Seguridad de auditoría** — autenticación con Supabase Auth, rate limiting en las Edge Functions y movimientos inmutables.
 - **Multi-dispositivo** — interfaz responsiva que se adapta a escritorio, tablet o celular.
 - **Multi-moneda** — soporta USD, EUR, VES, CLP y COP con símbolos y conversiones.
