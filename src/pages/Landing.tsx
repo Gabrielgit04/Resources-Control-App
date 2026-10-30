@@ -73,7 +73,6 @@ const STATS = [
 const NAV_LINKS = [
   { label: 'Características', href: '#features' },
   { label: 'Cómo funciona', href: '#how-it-works' },
-  { label: 'Precios', href: '#pricing' },
 ]
 
 function Logo() {
@@ -474,11 +473,11 @@ export function Landing() {
                     Características
                   </a>
                 </li>
-                <li>
+                {/* <li>
                   <a href="#pricing" className="hover:text-primary transition-colors">
                     Precios
                   </a>
-                </li>
+                </li> */}
                 <li>
                   <a href="#how-it-works" className="hover:text-primary transition-colors">
                     Cómo funciona
