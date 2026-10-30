@@ -3,9 +3,11 @@ import { APP_NAME } from '@/config'
 import { Icon } from '@/components/Icon'
 import { useAuth } from '@/components/auth/auth-context'
 import { useProfile } from '@/hooks/use-profile'
+import { useAppTour } from '@/components/tour/tour-context'
 
 export function MobileTopBar() {
   const { user } = useAuth()
+  const { startTour } = useAppTour()
   const { profile } = useProfile(user?.id)
   const nombre = profile?.name ?? (user?.user_metadata?.full_name as string | undefined) ?? 'Usuario'
   const avatar = profile?.avatar ?? (user?.user_metadata?.avatar_url as string | undefined) ?? ''
@@ -14,7 +16,7 @@ export function MobileTopBar() {
   return (
     <header className="md:hidden flex items-center justify-between px-4 py-3 bg-surface/90 backdrop-blur-md sticky top-0 z-50">
       <div className="flex items-center gap-3">
-        <Link to="/profile" className="flex items-center gap-3 min-w-0">
+        <Link to="/profile" className="flex items-center gap-3 min-w-0" data-tour="mobile-profile">
           {avatar ? (
             <img
               src={avatar}
@@ -32,9 +34,19 @@ export function MobileTopBar() {
           </div>
         </Link>
       </div>
-      <button aria-label="Notificaciones" className="p-2 text-on-surface rounded-full hover:bg-surface-container-low transition-colors">
-        <Icon name="notifications" />
-      </button>
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          aria-label="Guía de la app"
+          className="p-2 text-on-surface rounded-full hover:bg-surface-container-low transition-colors"
+          onClick={startTour}
+        >
+          <Icon name="help" />
+        </button>
+        <button aria-label="Notificaciones" className="p-2 text-on-surface rounded-full hover:bg-surface-container-low transition-colors">
+          <Icon name="notifications" />
+        </button>
+      </div>
     </header>
   )
 }
