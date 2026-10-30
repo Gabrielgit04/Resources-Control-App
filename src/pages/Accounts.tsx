@@ -119,6 +119,177 @@ function mapearCuenta(row: any): Cuenta {
   }
 }
 
+function formatFecha(iso: string) {
+  return new Date(iso).toLocaleString('es-ES', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+interface GrupoConcepto {
+  clave: string
+  concepto: string
+  cuentas: Cuenta[]
+  personas: number
+  pendiente: number
+  vencidas: number
+}
+
+interface CuentaRowProps {
+  cuenta: Cuenta
+  esPagar: boolean
+  expandido: boolean
+  abonos: any[]
+  cargandoAbonos: boolean
+  eliminando: boolean
+  fmt: (monto: number, moneda: string) => string
+  onToggle: () => void
+  onAbonar: () => void
+  onEditar: () => void
+  onEliminar: () => void
+}
+
+function CuentaRow({
+  cuenta: c,
+  esPagar,
+  expandido,
+  abonos,
+  cargandoAbonos,
+  eliminando,
+  fmt,
+  onToggle,
+  onAbonar,
+  onEditar,
+  onEliminar,
+}: CuentaRowProps) {
+  const estado = estadoDe(c, esPagar)
+  const interes = calcularInteres(c)
+  const restante = c.monto - c.abonado + interes
+  const saldada = c.abonado >= c.monto
+  return (
+    <div className="rounded-lg bg-surface hover:bg-surface-container-low transition-colors ghost-border">
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-2 md:gap-4 p-4 items-center">
+        <div className="text-sm font-medium text-on-surface truncate">
+          <span className="md:hidden text-on-surface-variant font-normal mr-2">Contraparte:</span>
+          <span className="inline-flex items-center gap-1.5">
+            <button
+              className="inline-flex items-center justify-center w-7 h-7 rounded-md text-on-surface-variant hover:bg-surface-container transition-colors"
+              onClick={onToggle}
+              aria-label={expandido ? 'Ocultar abonos' : 'Ver abonos'}
+            >
+              <Icon
+                name="chevron_right"
+                size={16}
+                className={`transition-transform ${expandido ? 'rotate-90' : ''}`}
+              />
+            </button>
+            {c.contraparte}
+          </span>
+          <span className="block text-[10px] font-normal text-on-surface-variant mt-0.5">
+            Creada {formatFecha(c.creadaEn)}
+          </span>
+        </div>
+        <div className="text-sm text-on-surface-variant md:col-span-2">
+          <span className="md:hidden text-on-surface-variant font-normal mr-2">Concepto:</span>
+          {c.concepto}
+          <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-surface-container text-on-surface-variant">
+            {c.currency}
+          </span>
+        </div>
+        <div className="text-sm md:text-right font-display font-medium text-on-surface">
+          <span className="md:hidden text-on-surface-variant font-normal mr-2">Restante:</span>
+          {fmt(restante, c.currency)}
+          {interes > 0 && (
+            <span className="block text-[10px] text-error font-normal">
+              incluye {fmt(interes, c.currency)} de interés {c.interesPeriod === 'weekly' ? 'semanal' : 'mensual'} ({c.interesRate}%)
+            </span>
+          )}
+          {c.abonado > 0 && (
+            <span className="block text-[10px] text-on-surface-variant font-normal">
+              de {fmt(c.monto, c.currency)} · abonado {fmt(c.abonado, c.currency)}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center md:justify-end gap-3">
+          <span
+            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${colorEstado(estado)}`}
+          >
+            {estado}
+          </span>
+        </div>
+        <div className="flex items-center md:justify-end gap-2">
+          {!saldada && (
+            <button
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-primary text-on-primary hover:bg-primary/90"
+              onClick={onAbonar}
+            >
+              <Icon name="payments" size={16} />
+              {esPagar ? 'Abonar' : 'Registrar cobro'}
+            </button>
+          )}
+          <button
+            className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors"
+            onClick={onEditar}
+            aria-label="Editar cuenta"
+            title="Editar cuenta"
+          >
+            <Icon name="edit" size={18} />
+          </button>
+          <button
+            className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-on-surface-variant hover:bg-error/10 hover:text-error transition-colors"
+            onClick={onEliminar}
+            aria-label="Eliminar cuenta"
+            title="Eliminar cuenta"
+          >
+            {eliminando ? (
+              <Icon name="progress_activity" size={18} className="animate-spin" />
+            ) : (
+              <Icon name="delete" size={18} />
+            )}
+          </button>
+        </div>
+      </div>
+
+      <div
+        className={`grid transition-[grid-template-rows] duration-300 ease-out ${
+          expandido ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+        }`}
+      >
+        <div className="overflow-hidden">
+          <div className="px-4 pb-4 border-t border-outline-variant/10">
+            <h4 className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider py-3">
+              Historial de abonos
+            </h4>
+            {cargandoAbonos ? (
+              <p className="text-sm text-on-surface-variant py-2">Cargando…</p>
+            ) : abonos.length === 0 ? (
+              <p className="text-sm text-on-surface-variant py-2">Aún no hay abonos registrados.</p>
+            ) : (
+              <div className="space-y-1.5">
+                {abonos.map((p) => (
+                  <div
+                    key={p.id}
+                    className="flex items-center justify-between text-sm py-1.5 px-3 rounded-lg bg-surface-container-low"
+                  >
+                    <span className="text-on-surface-variant">{formatFecha(p.created_at)}</span>
+                    <span className="font-display font-medium text-on-surface">
+                      {esPagar ? '-' : '+'}
+                      {fmt(Number(p.amount), c.currency)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function Accounts() {
   const { user } = useAuth()
   const [tab, setTab] = useState<TipoCuenta>('por-pagar')
@@ -161,6 +332,8 @@ export function Accounts() {
   const [missing, setMissing] = useState<string[]>([])
   const [pagina, setPagina] = useState(0)
   const [busqueda, setBusqueda] = useState('')
+  const [agruparPorConcepto, setAgruparPorConcepto] = useState(false)
+  const [grupoExpandido, setGrupoExpandido] = useState<string | null>(null)
 
   const esPagar = tab === 'por-pagar'
   const tipo: AccountType = esPagar ? 'payable' : 'receivable'
@@ -169,10 +342,46 @@ export function Accounts() {
   const cuentasFiltradas = useMemo(
     () =>
       busquedaNormalizada
-        ? cuentas.filter((c) => normalizar(c.contraparte).includes(busquedaNormalizada))
+        ? cuentas.filter(
+            (c) =>
+              normalizar(c.contraparte).includes(busquedaNormalizada) ||
+              normalizar(c.concepto).includes(busquedaNormalizada)
+          )
         : cuentas,
     [cuentas, busquedaNormalizada]
   )
+  const gruposConcepto = useMemo<GrupoConcepto[]>(() => {
+    const mapa = new Map<string, GrupoConcepto>()
+    for (const c of cuentasFiltradas) {
+      const clave = normalizar(c.concepto) || 'sin-concepto'
+      const estado = estadoDe(c, esPagar)
+      const abierta = estado === 'Pendiente' || estado === 'Vencida'
+      const pendiente = abierta
+        ? convertToBase(c.monto - c.abonado + calcularInteres(c), c.currency, settings)
+        : 0
+      const previo = mapa.get(clave)
+      if (previo) {
+        previo.cuentas.push(c)
+        previo.pendiente += pendiente
+        if (estado === 'Vencida') previo.vencidas += 1
+      } else {
+        mapa.set(clave, {
+          clave,
+          concepto: c.concepto.trim() || 'Sin concepto',
+          cuentas: [c],
+          personas: 0,
+          pendiente,
+          vencidas: estado === 'Vencida' ? 1 : 0,
+        })
+      }
+    }
+    return [...mapa.values()]
+      .map((grupo) => ({
+        ...grupo,
+        personas: new Set(grupo.cuentas.map((c) => normalizar(c.contraparte))).size,
+      }))
+      .sort((a, b) => b.pendiente - a.pendiente || a.concepto.localeCompare(b.concepto))
+  }, [cuentasFiltradas, esPagar, settings])
   const frecuentes = useMemo<ContraparteFrecuente[]>(() => {
     const mapa = new Map<string, ContraparteFrecuente>()
     for (const c of cuentas) {
@@ -204,9 +413,13 @@ export function Accounts() {
     if (!escritas) return frecuentes
     return frecuentes.filter((f) => f.clave.includes(escritas))
   }, [frecuentes, form.contraparte])
-  const totalPaginas = Math.max(1, Math.ceil(cuentasFiltradas.length / PAGE_SIZE))
+  const totalPaginas = Math.max(
+    1,
+    Math.ceil((agruparPorConcepto ? gruposConcepto.length : cuentasFiltradas.length) / PAGE_SIZE)
+  )
   const paginaActual = Math.min(pagina, totalPaginas - 1)
   const cuentasPagina = cuentasFiltradas.slice(paginaActual * PAGE_SIZE, paginaActual * PAGE_SIZE + PAGE_SIZE)
+  const gruposPagina = gruposConcepto.slice(paginaActual * PAGE_SIZE, paginaActual * PAGE_SIZE + PAGE_SIZE)
 
   const cargar = useCallback(async () => {
     if (!user) return
@@ -285,24 +498,6 @@ export function Accounts() {
       }
     }
   }
-
-  const formatFechaHora = (iso: string) =>
-    new Date(iso).toLocaleString('es-ES', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
-
-  const formatFechaAbono = (iso: string) =>
-    new Date(iso).toLocaleString('es-ES', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
 
   const registrarAbono = async () => {
     if (!abonando || !user) return
@@ -511,6 +706,7 @@ export function Accounts() {
             setTab('por-pagar')
             setPagina(0)
             setBusqueda('')
+            setGrupoExpandido(null)
           }}
         >
           <Icon name="trending_down" size={18} />
@@ -524,6 +720,7 @@ export function Accounts() {
             setTab('por-cobrar')
             setPagina(0)
             setBusqueda('')
+            setGrupoExpandido(null)
           }}
         >
           <Icon name="trending_up" size={18} />
@@ -592,35 +789,50 @@ export function Accounts() {
           <h3 className="font-display font-semibold text-xl text-on-surface">
             {esPagar ? 'Cuentas por Pagar' : 'Cuentas por Cobrar'}
           </h3>
-          <div className="relative w-full sm:w-72">
-            <Icon
-              name="search"
-              size={18}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none"
-            />
-            <input
-              className="w-full pl-9 pr-9 py-2 bg-surface-container-low border border-outline-variant/30 rounded-lg text-sm text-on-surface placeholder:text-on-surface-variant/70 focus:ring-1 focus:ring-primary focus:border-primary transition-all"
-              placeholder={`Buscar ${esPagar ? 'proveedor' : 'cliente'}…`}
-              type="text"
-              value={busqueda}
-              onChange={(e) => {
-                setBusqueda(e.target.value)
-                setPagina(0)
-              }}
-            />
-            {busqueda && (
-              <button
-                type="button"
-                className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center justify-center w-6 h-6 rounded-md text-on-surface-variant hover:bg-surface-container transition-colors"
-                onClick={() => {
-                  setBusqueda('')
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
+            <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-container-low ghost-border cursor-pointer select-none">
+              <Switch
+                checked={agruparPorConcepto}
+                onCheckedChange={(v) => {
+                  setAgruparPorConcepto(v)
+                  setPagina(0)
+                  setGrupoExpandido(null)
+                }}
+              />
+              <span className="text-sm font-medium text-on-surface whitespace-nowrap">
+                Agrupar por concepto
+              </span>
+            </label>
+            <div className="relative w-full sm:w-72">
+              <Icon
+                name="search"
+                size={18}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none"
+              />
+              <input
+                className="w-full pl-9 pr-9 py-2 bg-surface-container-low border border-outline-variant/30 rounded-lg text-sm text-on-surface placeholder:text-on-surface-variant/70 focus:ring-1 focus:ring-primary focus:border-primary transition-all"
+                placeholder={`Buscar ${esPagar ? 'proveedor' : 'cliente'} o concepto…`}
+                type="text"
+                value={busqueda}
+                onChange={(e) => {
+                  setBusqueda(e.target.value)
                   setPagina(0)
                 }}
-                aria-label="Limpiar búsqueda"
-              >
-                <Icon name="close" size={14} />
-              </button>
-            )}
+              />
+              {busqueda && (
+                <button
+                  type="button"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center justify-center w-6 h-6 rounded-md text-on-surface-variant hover:bg-surface-container transition-colors"
+                  onClick={() => {
+                    setBusqueda('')
+                    setPagina(0)
+                  }}
+                  aria-label="Limpiar búsqueda"
+                >
+                  <Icon name="close" size={14} />
+                </button>
+              )}
+            </div>
           </div>
         </div>
         <div className="space-y-2">
@@ -636,137 +848,108 @@ export function Accounts() {
             <EmptyState
               icon="search_off"
               title="Sin resultados"
-              description={`No se encontraron ${esPagar ? 'proveedores' : 'clientes'} que coincidan con "${busqueda.trim()}".`}
+              description={`No se encontraron cuentas que coincidan con "${busqueda.trim()}".`}
             />
-          ) : (
-            cuentasPagina.map((c) => {
-            const estado = estadoDe(c, esPagar)
-            const interes = calcularInteres(c)
-            const restante = c.monto - c.abonado + interes
-            const saldada = c.abonado >= c.monto
-            const expandido = expandidoId === c.id
-            const abonos = pagos[c.id] ?? []
-            return (
-              <div
-                key={c.id}
-                className="rounded-lg bg-surface hover:bg-surface-container-low transition-colors ghost-border"
-              >
-              <div className="grid grid-cols-1 md:grid-cols-6 gap-2 md:gap-4 p-4 items-center">
-                <div className="text-sm font-medium text-on-surface truncate">
-                  <span className="md:hidden text-on-surface-variant font-normal mr-2">Contraparte:</span>
-                  <span className="inline-flex items-center gap-1.5">
-                    <button
-                      className="inline-flex items-center justify-center w-7 h-7 rounded-md text-on-surface-variant hover:bg-surface-container transition-colors"
-                      onClick={() => toggleExpandir(c)}
-                      aria-label={expandido ? 'Ocultar abonos' : 'Ver abonos'}
-                    >
-                      <Icon
-                        name="chevron_right"
-                        size={16}
-                        className={`transition-transform ${expandido ? 'rotate-90' : ''}`}
-                      />
-                    </button>
-                    {c.contraparte}
-                  </span>
-                  <span className="block text-[10px] font-normal text-on-surface-variant mt-0.5">
-                    Creada {formatFechaHora(c.creadaEn)}
-                  </span>
-                </div>
-                <div className="text-sm text-on-surface-variant md:col-span-2">
-                  <span className="md:hidden text-on-surface-variant font-normal mr-2">Concepto:</span>
-                  {c.concepto}
-                  <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-surface-container text-on-surface-variant">
-                    {c.currency}
-                  </span>
-                </div>
-                <div className="text-sm md:text-right font-display font-medium text-on-surface">
-                  <span className="md:hidden text-on-surface-variant font-normal mr-2">Restante:</span>
-                  {fmt(restante, c.currency)}
-                  {interes > 0 && (
-                    <span className="block text-[10px] text-error font-normal">
-                      incluye {fmt(interes, c.currency)} de interés {c.interesPeriod === 'weekly' ? 'semanal' : 'mensual'} ({c.interesRate}%)
-                    </span>
-                  )}
-                  {c.abonado > 0 && (
-                    <span className="block text-[10px] text-on-surface-variant font-normal">
-                      de {fmt(c.monto, c.currency)} · abonado {fmt(c.abonado, c.currency)}
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-center md:justify-end gap-3">
-                  <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${colorEstado(estado)}`}
-                  >
-                    {estado}
-                  </span>
-                </div>
-                <div className="flex items-center md:justify-end gap-2">
-                  {!saldada && (
-                    <button
-                      className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-primary text-on-primary hover:bg-primary/90"
-                      onClick={() => abrirAbono(c)}
-                    >
-                      <Icon name="payments" size={16} />
-                      {esPagar ? 'Abonar' : 'Registrar cobro'}
-                    </button>
-                  )}
+          ) : agruparPorConcepto ? (
+            gruposPagina.map((grupo) => {
+              const abierto = grupoExpandido === grupo.clave
+              return (
+                <div
+                  key={grupo.clave}
+                  className="rounded-lg bg-surface ghost-border transition-colors"
+                >
                   <button
-                    className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors"
-                    onClick={() => abrirEdicion(c)}
-                    aria-label="Editar cuenta"
-                    title="Editar cuenta"
+                    type="button"
+                    className="w-full flex items-center gap-3 p-4 text-left hover:bg-surface-container-low transition-colors"
+                    onClick={() => setGrupoExpandido(abierto ? null : grupo.clave)}
+                    aria-expanded={abierto}
                   >
-                    <Icon name="edit" size={18} />
-                  </button>
-                  <button
-                    className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-on-surface-variant hover:bg-error/10 hover:text-error transition-colors"
-                    onClick={() => setEliminando(c)}
-                    aria-label="Eliminar cuenta"
-                    title="Eliminar cuenta"
-                  >
-                    {eliminandoId === c.id ? (
-                      <Icon name="progress_activity" size={18} className="animate-spin" />
-                    ) : (
-                      <Icon name="delete" size={18} />
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              <div
-                className={`grid transition-[grid-template-rows] duration-300 ease-out ${
-                  expandido ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
-                }`}
-              >
-                <div className="overflow-hidden">
-                  <div className="px-4 pb-4 border-t border-outline-variant/10">
-                    <h4 className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider py-3">
-                      Historial de abonos
-                    </h4>
-                    {cargandoPagos === c.id ? (
-                      <p className="text-sm text-on-surface-variant py-2">Cargando…</p>
-                    ) : abonos.length === 0 ? (
-                      <p className="text-sm text-on-surface-variant py-2">Aún no hay abonos registrados.</p>
-                    ) : (
-                      <div className="space-y-1.5">
-                        {abonos.map((p) => (
-                          <div
-                            key={p.id}
-                            className="flex items-center justify-between text-sm py-1.5 px-3 rounded-lg bg-surface-container-low"
-                          >
-                            <span className="text-on-surface-variant">{formatFechaAbono(p.created_at)}</span>
-                            <span className="font-display font-medium text-on-surface">
-                              {esPagar ? '-' : '+'}
-                              {fmt(Number(p.amount), c.currency)}
+                    <span className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-primary-container text-on-primary-container flex-shrink-0">
+                      <Icon name="category" size={18} />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-on-surface truncate">{grupo.concepto}</p>
+                      <p className="text-xs text-on-surface-variant">
+                        <span className="inline-flex items-center gap-1">
+                          <Icon name="group" size={14} />
+                          {grupo.personas} {grupo.personas === 1 ? 'persona' : 'personas'}
+                        </span>
+                        <span className="mx-1.5">·</span>
+                        {grupo.cuentas.length} {grupo.cuentas.length === 1 ? 'cuenta' : 'cuentas'}
+                        {grupo.vencidas > 0 && (
+                          <>
+                            <span className="mx-1.5">·</span>
+                            <span className="text-error font-medium">
+                              {grupo.vencidas} {grupo.vencidas === 1 ? 'vencida' : 'vencidas'}
                             </span>
-                          </div>
-                        ))}
+                          </>
+                        )}
+                      </p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="font-display font-semibold text-on-surface">
+                        {formatMoney(grupo.pendiente, settings.baseCurrency)}
+                      </p>
+                      <p className="text-[10px] text-on-surface-variant uppercase tracking-wider">pendiente</p>
+                    </div>
+                    <Icon
+                      name="expand_more"
+                      size={20}
+                      className={`text-on-surface-variant transition-transform ${abierto ? 'rotate-180' : ''}`}
+                    />
+                  </button>
+                  <div
+                    className={`grid transition-[grid-template-rows] duration-300 ease-out ${
+                      abierto ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+                    }`}
+                  >
+                    <div className="overflow-hidden">
+                      <div className="p-2 pt-0 space-y-2">
+                        {grupo.cuentas.map((c) => {
+                          const expandido = expandidoId === c.id
+                          const abonos = pagos[c.id] ?? []
+                          return (
+                            <CuentaRow
+                              key={c.id}
+                              cuenta={c}
+                              esPagar={esPagar}
+                              expandido={expandido}
+                              abonos={abonos}
+                              cargandoAbonos={cargandoPagos === c.id}
+                              eliminando={eliminandoId === c.id}
+                              fmt={fmt}
+                              onToggle={() => toggleExpandir(c)}
+                              onAbonar={() => abrirAbono(c)}
+                              onEditar={() => abrirEdicion(c)}
+                              onEliminar={() => setEliminando(c)}
+                            />
+                          )
+                        })}
                       </div>
-                    )}
+                    </div>
                   </div>
                 </div>
-              </div>
-              </div>
+              )
+            })
+          ) : (
+            cuentasPagina.map((c) => {
+              const expandido = expandidoId === c.id
+              const abonos = pagos[c.id] ?? []
+              return (
+                <CuentaRow
+                  key={c.id}
+                  cuenta={c}
+                  esPagar={esPagar}
+                  expandido={expandido}
+                  abonos={abonos}
+                  cargandoAbonos={cargandoPagos === c.id}
+                  eliminando={eliminandoId === c.id}
+                  fmt={fmt}
+                  onToggle={() => toggleExpandir(c)}
+                  onAbonar={() => abrirAbono(c)}
+                  onEditar={() => abrirEdicion(c)}
+                  onEliminar={() => setEliminando(c)}
+                />
               )
             })
           )}
@@ -782,9 +965,16 @@ export function Accounts() {
               Anterior
             </button>
             <span className="text-sm text-on-surface-variant">
-              {paginaActual * PAGE_SIZE + 1}–{Math.min((paginaActual + 1) * PAGE_SIZE, cuentasFiltradas.length)} de{' '}
-              {cuentasFiltradas.length}
-              {cuentasFiltradas.length !== cuentas.length && ` (de ${cuentas.length})`}
+              {paginaActual * PAGE_SIZE + 1}–
+              {Math.min(
+                (paginaActual + 1) * PAGE_SIZE,
+                agruparPorConcepto ? gruposConcepto.length : cuentasFiltradas.length
+              )}{' '}
+              de {agruparPorConcepto ? gruposConcepto.length : cuentasFiltradas.length}
+              {agruparPorConcepto ? ' grupos' : ''}
+              {!agruparPorConcepto &&
+                cuentasFiltradas.length !== cuentas.length &&
+                ` (de ${cuentas.length})`}
             </span>
             <button
               className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium text-on-surface-variant hover:bg-surface-container transition-colors disabled:opacity-40 disabled:pointer-events-none"

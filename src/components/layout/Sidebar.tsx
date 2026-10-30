@@ -4,9 +4,11 @@ import { NAV_ITEMS } from '@/components/layout/navigation'
 import { useAuth } from '@/components/auth/auth-context'
 import { useProfile } from '@/hooks/use-profile'
 import { useIsAdmin } from '@/hooks/use-is-admin'
+import { useAppTour } from '@/components/tour/tour-context'
 
 export function Sidebar() {
   const { user } = useAuth()
+  const { startTour } = useAppTour()
   const { profile } = useProfile(user?.id)
   const nombre = profile?.name ?? (user?.user_metadata?.full_name as string | undefined) ?? 'Usuario'
   const avatar = profile?.avatar ?? (user?.user_metadata?.avatar_url as string | undefined) ?? ''
@@ -17,7 +19,7 @@ export function Sidebar() {
   return (
     <nav className="hidden md:flex flex-col w-64 bg-surface-container-lowest h-full shadow-[4px_0_24px_rgba(11,28,48,0.04)] z-40 fixed">
       <div className="p-6">
-        <Link to="/profile" className="flex items-center gap-3 group">
+        <Link to="/profile" className="flex items-center gap-3 group" data-tour="sidebar-profile">
           {avatar ? (
             <img
               src={avatar}
@@ -41,6 +43,7 @@ export function Sidebar() {
             key={item.to}
             to={item.to}
             end={item.to === '/'}
+            data-tour={`nav-${item.to.replace('/', '')}`}
             className={({ isActive }) =>
               `flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-colors ${
                 isActive
@@ -57,6 +60,16 @@ export function Sidebar() {
             )}
           </NavLink>
         ))}
+      </div>
+      <div className="p-4 border-t border-outline-variant/20">
+        <button
+          type="button"
+          className="flex w-full items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors"
+          onClick={startTour}
+        >
+          <Icon name="help" />
+          <span>Guía de la app</span>
+        </button>
       </div>
     </nav>
   )
