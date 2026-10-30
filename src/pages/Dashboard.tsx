@@ -225,6 +225,7 @@ export function Dashboard() {
         </div>
         <Link
           to="/movimientos/nuevo"
+          data-tour="nuevo-movimiento-desktop"
           className="hidden md:inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg bg-primary text-on-primary font-medium text-sm glow-hover transition-all active:scale-95"
         >
           <Icon name="add" size={18} />
@@ -233,7 +234,10 @@ export function Dashboard() {
       </div>
 
       {/* Balance Hero */}
-      <div className="bg-gradient-to-br from-primary to-primary-container rounded-xl p-6 md:p-8 relative overflow-hidden shadow-[0_12px_40px_rgba(0,109,50,0.25)]">
+      <div
+        data-tour="balance"
+        className="bg-gradient-to-br from-primary to-primary-container rounded-xl p-6 md:p-8 relative overflow-hidden shadow-[0_12px_40px_rgba(0,109,50,0.25)]"
+      >
         <div className="absolute -top-16 -right-16 w-64 h-64 bg-white/10 rounded-full blur-2xl pointer-events-none" />
         <div className="relative z-10 flex flex-col md:flex-row justify-between gap-6">
           <div>
@@ -295,6 +299,7 @@ export function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Link
           to="/budget"
+          data-tour="presupuesto"
           className="group bg-surface-container-lowest rounded-xl p-6 ghost-border shadow-[0_8px_32px_rgba(11,28,48,0.03)] hover:bg-surface-bright transition-colors flex items-start justify-between"
         >
           <div className="flex items-center gap-4">
@@ -529,6 +534,7 @@ export function Dashboard() {
       {/* Mobile FAB */}
       <Link
         to="/movimientos/nuevo"
+        data-tour="nuevo-movimiento-mobile"
         className="md:hidden fixed bottom-20 right-4 z-40 inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary text-on-primary shadow-[0_8px_24px_rgba(0,109,50,0.4)] active:scale-95 transition-all"
         aria-label="Nuevo Movimiento"
       >

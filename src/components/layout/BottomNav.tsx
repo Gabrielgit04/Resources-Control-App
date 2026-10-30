@@ -15,6 +15,7 @@ export function BottomNav() {
             key={item.to}
             to={item.to}
             end={item.to === '/'}
+            data-tour={`bottom-${item.to.replace('/', '')}`}
             className={({ isActive }) =>
               `flex flex-col items-center p-2 rounded-lg transition-colors ${
                 isActive
