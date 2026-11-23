@@ -82,11 +82,10 @@ export function Login() {
         <div className="glass-panel rounded-xl shadow-[0_8px_30px_rgb(11,28,48,0.04)] border border-outline-variant/20 p-8">
           {/* Logo & Header */}
           <div className="text-center mb-10">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary-container/20 text-primary mb-4">
-              <Icon name="account_balance" fill size={24} />
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-xl bg-white ring-1 ring-outline-variant/20 shadow-sm mb-4">
+              <img src="/g-amount.svg" alt={APP_NAME} className="w-12 h-12 object-contain" />
             </div>
-            <h1 className="font-headline text-3xl font-bold tracking-tight text-on-surface mb-2">{APP_NAME}</h1>
-            <p className="font-body text-sm text-on-surface-variant">Entra al Luminous Engine.</p>
+            <h1 className="font-headline text-3xl font-bold tracking-tight text-on-surface">{APP_NAME}</h1>
           </div>
 
           {/* Form */}

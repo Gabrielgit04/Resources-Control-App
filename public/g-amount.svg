@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400" fill="none">
+  <defs>
+    <linearGradient id="gamountEmeraldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#059669"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+    <linearGradient id="gamountCyanGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0891B2"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+    <filter id="cleanShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#059669" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#cleanShadow)" transform="translate(-5, -20)">
+    <!-- Bucle superior de la 'g' -->
+    <path d="M 280 130 C 230 90, 150 100, 115 150 C 75 210, 85 285, 140 330 C 195 375, 275 355, 305 300 C 315 280, 320 250, 320 215 L 320 120" 
+          stroke="url(#gamountEmeraldGrad)" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Trazo inferior dinámico de cashflow -->
+    <path d="M 320 215 L 320 310 C 320 375, 260 410, 195 400 C 150 390, 125 365, 110 335" 
+          stroke="url(#gamountCyanGrad)" stroke-width="26" stroke-linecap="round"/>
+
+    <!-- Flecha de crecimiento alcista -->
+    <polygon points="320,70 350,125 290,125" fill="#059669"/>
+
+    <!-- Token central de liquidez (núcleo blanco con acento verde) -->
+    <circle cx="210" cy="225" r="24" fill="#FFFFFF" stroke="#059669" stroke-width="12"/>
+    <circle cx="210" cy="225" r="7" fill="#10B981"/>
+  </g>
+</svg>
