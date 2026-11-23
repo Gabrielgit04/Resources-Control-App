@@ -78,8 +78,8 @@ const NAV_LINKS = [
 function Logo() {
   return (
     <Link to="/" className="flex items-center gap-2">
-      <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-primary-container/20 text-primary">
-        <Icon name="account_balance" fill size={22} />
+      <span className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-white ring-1 ring-outline-variant/20 shadow-sm shrink-0">
+        <img src="/g-amount.svg" alt={APP_NAME} className="w-10 h-10 object-contain" />
       </span>
       <span className="font-headline font-bold text-xl tracking-tight text-on-surface">{APP_NAME}</span>
     </Link>

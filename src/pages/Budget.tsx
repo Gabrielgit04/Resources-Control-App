@@ -177,8 +177,8 @@ export function Budget() {
       {/* Top App Bar */}
       <header className="flex items-center justify-between p-4 bg-surface/90 backdrop-blur-md sticky top-0 z-50">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full overflow-hidden border border-outline-variant/30 flex-shrink-0 bg-primary-container/20 text-primary font-headline font-bold flex items-center justify-center">
-            G
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-white ring-1 ring-outline-variant/20 shadow-sm shrink-0">
+            <img src="/g-amount.svg" alt={APP_NAME} className="w-10 h-10 object-contain" />
           </div>
           <h1 className="text-xl font-headline font-bold tracking-tight text-on-surface">{APP_NAME}</h1>
         </div>
