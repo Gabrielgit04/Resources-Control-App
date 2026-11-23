@@ -92,7 +92,9 @@ export function SignUp() {
           <div className="w-full md:w-5/12 bg-surface-container-low p-8 lg:p-12 flex flex-col justify-between relative overflow-hidden">
             <div className="relative z-10">
               <div className="flex items-center gap-2 mb-16">
-                <Icon name="account_balance" fill size={30} className="text-primary" />
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-white ring-1 ring-outline-variant/20 shadow-sm shrink-0">
+                  <img src="/g-amount.svg" alt={APP_NAME} className="w-10 h-10 object-contain" />
+                </div>
                 <span className="font-headline font-bold text-2xl tracking-tighter text-on-surface">{APP_NAME}</span>
               </div>
               <h2 className="font-headline text-4xl lg:text-5xl font-bold leading-tight mb-4">
