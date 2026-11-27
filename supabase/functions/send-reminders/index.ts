@@ -5,7 +5,7 @@ import { handleCors, corsHeaders, jsonResponse, rateLimit, requireUser, verifyCr
 const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
 const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 const resendKey = Deno.env.get('RESEND_API_KEY') ?? ''
-const fromEmail = Deno.env.get('REMINDER_FROM_EMAIL') ?? 'G-amount <onboarding@resend.dev>'
+const fromEmail = Deno.env.get('REMINDER_FROM_EMAIL') ?? ''
 const advanceDays = Number(Deno.env.get('REMINDER_ADVANCE_DAYS') ?? '2')
 
 const supabase = createClient(supabaseUrl, serviceRoleKey)
@@ -97,6 +97,12 @@ Deno.serve(async (req) => {
 
   if (!resendKey) {
     return jsonResponse({ ok: false, error: 'Falta RESEND_API_KEY' }, 500)
+  }
+  if (!fromEmail || /@resend\.dev/i.test(fromEmail)) {
+    return jsonResponse(
+      { ok: false, error: 'Verifica un dominio en Resend y configura REMINDER_FROM_EMAIL con ese dominio' },
+      500,
+    )
   }
   if (!serviceRoleKey) {
     return jsonResponse({ ok: false, error: 'Falta SUPABASE_SERVICE_ROLE_KEY' }, 500)

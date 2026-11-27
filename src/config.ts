@@ -1,2 +1,5 @@
 export const APP_NAME = 'G-amount'
-export const APP_TAGLINE = 'Luminous Engine'
+export const APP_TAGLINE = 'Tus finanzas en un solo flujo'
+export const PRIVACY_CONTACT_EMAIL = 'gabrielmoises1202@gmail.com'
+export const PRIVACY_EFFECTIVE_DATE = '25 de noviembre de 2026'
+export const TERMS_EFFECTIVE_DATE = '25 de noviembre de 2026'

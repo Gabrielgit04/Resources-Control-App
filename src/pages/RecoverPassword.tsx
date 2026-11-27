@@ -30,7 +30,6 @@ export function RecoverPassword() {
 
   return (
     <div className="h-full bg-surface text-on-surface font-body antialiased flex items-center justify-center p-6 min-h-screen selection:bg-primary-container selection:text-on-primary-container">
-      {/* The Luminous Engine Canvas */}
       <RouteTransition>
         <main className="w-full max-w-md relative z-10">
         {/* Decorative Ambient Layering */}

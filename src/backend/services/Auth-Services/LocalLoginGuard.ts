@@ -1,5 +1,5 @@
 const MAX_ATTEMPTS = 3
-const LOCK_MS = 3 * 60 * 1000
+const LOCK_MS = 5 * 60 * 1000
 const STORAGE_PREFIX = 'login-guard:'
 
 interface GuardState {
