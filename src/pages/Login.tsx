@@ -209,6 +209,14 @@ export function Login() {
               Regístrate
             </Link>
           </p>
+          <p className="mt-4 flex justify-center gap-4 text-center font-body text-xs text-on-surface-variant">
+            <Link className="font-medium text-primary hover:text-primary-container transition-colors" to="/terminos">
+              Términos y Condiciones
+            </Link>
+            <Link className="font-medium text-primary hover:text-primary-container transition-colors" to="/privacidad">
+              Privacidad
+            </Link>
+          </p>
         </div>
       </main>
       </RouteTransition>

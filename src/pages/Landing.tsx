@@ -511,6 +511,12 @@ export function Landing() {
               © {new Date().getFullYear()} {APP_NAME}. Todos los derechos reservados.
             </p>
             <div className="flex items-center gap-4 text-on-surface-variant">
+              <Link to="/terminos" className="text-xs hover:text-primary transition-colors">
+                Términos y Condiciones
+              </Link>
+              <Link to="/privacidad" className="text-xs hover:text-primary transition-colors">
+                Política de privacidad
+              </Link>
               <Icon name="verified_user" size={16} />
               <span className="text-xs">Auditoría y cifrado garantizados</span>
             </div>

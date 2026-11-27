@@ -11,11 +11,13 @@ import { Dashboard } from '@/pages/Dashboard'
 import { Landing } from '@/pages/Landing'
 import { Login } from '@/pages/Login'
 import { NuevoMovimiento, EditarMovimiento } from '@/pages/NewMovements'
+import { Privacy } from '@/pages/Privacy'
 import { Profile } from '@/pages/Profile'
 import { RecoverPassword } from '@/pages/RecoverPassword'
 import { ResetPassword } from '@/pages/ResetPassword'
 import { Reports } from '@/pages/Reports'
 import { SignUp } from '@/pages/SignUp'
+import { Terms } from '@/pages/Terms'
 
 export default function App() {
   return (
@@ -27,6 +29,8 @@ export default function App() {
           <Route path="/signup" element={<SignUp />} />
           <Route path="/forgot-password" element={<RecoverPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/privacidad" element={<Privacy />} />
+          <Route path="/terminos" element={<Terms />} />
           <Route
             path="/profile"
             element={

@@ -32,8 +32,8 @@ export async function SignInUser(userData: SignInData): Promise<SignInResult> {
             }
         }
 
-        // const userId = data.user?.id
-        // console.info('[SignIn] Sesión iniciada para userId:', userId)
+        const userEmail = data.user?.email
+        console.info('[SignIn] Sesión iniciada para usuario:', userEmail)
 
         let isAdmin = false
         try {

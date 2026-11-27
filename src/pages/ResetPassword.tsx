@@ -51,7 +51,6 @@ export function ResetPassword() {
 
   return (
     <div className="h-full bg-surface text-on-surface font-body antialiased flex items-center justify-center p-6 min-h-screen selection:bg-primary-container selection:text-on-primary-container">
-      {/* The Luminous Engine Canvas */}
       <RouteTransition>
         <main className="w-full max-w-md relative z-10">
         <div className="absolute -top-32 -left-32 w-64 h-64 bg-primary-container/20 rounded-full blur-[80px] -z-10 pointer-events-none" />
