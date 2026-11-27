@@ -73,35 +73,7 @@ VITE_SUPABASE_ANON_KEY=       # anon key (pública)
 SUPERADMIN_USER_ID=           # UUID del superadmin (Edge Function admin-users, server-side)
 # SUPABASE_JWKS_URL opcional: las Edge Functions derivan las JWKS de SUPABASE_URL.
 ```
-
-### Confirmación de correo al registrarse
-
-Activa **Confirm email** en tu proyecto de Supabase (*Authentication → Providers → Email*). Registra también el dominio de la app en **Site URL / Redirect URLs** para que el enlace de confirmación redirija correctamente.
-
-Con esta opción activa, `signUp` crea el usuario y su perfil en `public.users` (mediante el trigger), pero no devuelve sesión: la app muestra la pantalla «Revisa tu correo» y permite reenviar el enlace con `supabase.auth.resend`. El acceso queda habilitado solo tras la confirmación.
-
-> Supabase envía estos correos con su servicio integrado, sujeto a los límites del plan: solo entrega a correos del equipo y permite 2 mensajes por hora. Para registros reales usa el hook con Resend que se describe abajo.
-
-#### Correo de confirmación con Resend (recomendado)
-
-El `RESEND_API_KEY` ya configurado para los recordatorios se reutiliza en la Edge Function `send-auth-email`, que envía los correos de Supabase Auth (confirmación, recuperación, invitaciones y cambio de correo) en español.
-
-```bash
-supabase functions deploy send-auth-email --no-verify-jwt
-```
-
-En Supabase → Authentication → Hooks, crea un hook **Send Email** de tipo HTTPS con la URL `https://TU-PROJECT-REF.supabase.co/functions/v1/send-auth-email`, pulsa **Generate Secret** y guarda el secreto:
-
-```bash
-supabase secrets set SEND_EMAIL_HOOK_SECRET="v1,whsec_..."
-supabase secrets set AUTH_FROM_EMAIL="G-amount <no-reply@tu-dominio.com>"
-```
-
-Con el hook activo, Supabase Auth no usa SMTP (ni el integrado), así que un hook anterior apuntando directamente a `api.resend.com` sin key —que produce *No API key found in request*— debe reemplazarse por este.
-
-> **Importante:** `onboarding@resend.dev` es solo para pruebas: Resend rechaza cualquier destinatario que no sea el correo de tu cuenta (*The resend.dev domain is for testing and can only send to your own email address*). En Resend → **Domains** añade tu dominio, publica los registros DNS y espera a que figure como **Verified**. Después guarda `AUTH_FROM_EMAIL` (y `REMINDER_FROM_EMAIL`) con un remitente de ese dominio, por ejemplo `G-amount <no-reply@tu-dominio.com>`, y vuelve a desplegar las funciones para que tomen los nuevos secrets.
-
-### Edge Functions (Supabase)
+## Edge Functions (Supabase)
 
 Las funciones se despliegan con la CLI de Supabase. Ejecuta antes de desplegar:
 
