@@ -3,18 +3,16 @@
   "name": "resources-control-app",  "compatibility_date": "2026-08-14",
 
   "observability": {
-    "enabled": true,
-    "head_sampling_rate": 1,
     "logs": {
       "enabled": true,
       "head_sampling_rate": 1,
-      "persist": true,
-      "invocation_logs": true
+      "invocation_logs": true,
+      "persist": true
     },
     "traces": {
       "enabled": true,
-      "persist": true,
-      "head_sampling_rate": 1
+      "head_sampling_rate": 1,
+      "persist": true
     }
   },
   "assets": {
