@@ -6,9 +6,12 @@ import { Icon } from '@/components/Icon'
 import { RouteTransition } from '@/components/RouteTransition'
 import { APP_NAME } from '@/config'
 import { isEmail, isStrongPassword, isTextOnly } from '@/lib/validation'
-import { RegisterUser, type RegisterUserResult } from '@/backend/services/Auth-Services/SignUp.Services'
+import {
+  RegisterUser,
+  ResendConfirmation,
+  type RegisterUserResult,
+} from '@/backend/services/Auth-Services/SignUp.Services'
 import type { Email } from '@/backend/utils/types'
-import { supabase } from '@/server/supabase.service'
 
 export function SignUp() {
   const navigate = useNavigate()
@@ -20,6 +23,20 @@ export function SignUp() {
     terms: false,
   })
   const [loading, setLoading] = useState(false)
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null)
+  const [resending, setResending] = useState(false)
+
+  const handleResend = async () => {
+    if (!pendingEmail) return
+    setResending(true)
+    const result = await ResendConfirmation(pendingEmail)
+    setResending(false)
+    if (!result.ok) {
+      toast.error(result.error ?? 'No se pudo reenviar el correo de confirmación.')
+      return
+    }
+    toast.success('Correo de confirmación reenviado.')
+  }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -65,14 +82,13 @@ export function SignUp() {
       return
     }
 
-    const { data: sessionData } = await supabase.auth.getSession()
-    if (sessionData.session) {
-      toast.success('Cuenta creada correctamente. ¡Bienvenido!')
-      navigate('/dashboard')
-    } else {
-      toast.success('Cuenta creada. Revisa tu correo para confirmarla e inicia sesión.')
-      navigate('/login')
+    if (result.requiresConfirmation) {
+      setPendingEmail(result.user.email)
+      return
     }
+
+    toast.success('Cuenta creada correctamente. ¡Bienvenido!')
+    navigate('/dashboard', { replace: true })
   }
 
   return (
@@ -117,8 +133,40 @@ export function SignUp() {
 
           {/* Right Side: Form */}
           <div className="w-full md:w-7/12 bg-surface-container-lowest p-8 lg:p-16 flex flex-col justify-center">
-            <h1 className="font-headline text-3xl font-bold mb-2">Crear cuenta</h1>
-            <p className="text-on-surface-variant text-sm mb-8">Ingresa tus datos a continuación para empezar.</p>
+            {!pendingEmail && (
+              <>
+                <h1 className="font-headline text-3xl font-bold mb-2">Crear cuenta</h1>
+                <p className="text-on-surface-variant text-sm mb-8">Ingresa tus datos a continuación para empezar.</p>
+              </>
+            )}
+            {pendingEmail ? (
+              <div className="text-center">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary-container/20 text-primary mb-6">
+                  <Icon name="mark_email_read" size={32} />
+                </div>
+                <h1 className="font-headline text-3xl font-bold mb-3">Revisa tu correo</h1>
+                <p className="text-on-surface-variant text-sm leading-relaxed">
+                  Enviamos un enlace de confirmación a{' '}
+                  <span className="font-medium text-on-surface">{pendingEmail}</span>. Ábrelo para activar tu
+                  cuenta. Si no aparece, revisa la carpeta de spam.
+                </p>
+                <button
+                  className="mt-8 w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-lg text-sm font-medium text-on-primary bg-primary hover:bg-primary-container transition-colors disabled:opacity-60 disabled:pointer-events-none"
+                  disabled={resending}
+                  type="button"
+                  onClick={handleResend}
+                >
+                  <Icon name="forward" size={18} />
+                  {resending ? 'Reenviando…' : 'Reenviar correo'}
+                </button>
+                <p className="mt-6 text-sm text-on-surface-variant">
+                  ¿Ya confirmaste tu cuenta?{' '}
+                  <Link className="font-medium text-primary hover:text-primary-container transition-colors" to="/login">
+                    Inicia sesión
+                  </Link>
+                </p>
+              </div>
+            ) : (
             <form className="space-y-6" onSubmit={handleSubmit}>
               {/* Full Name */}
               <div>
@@ -220,10 +268,14 @@ export function SignUp() {
                   onChange={(e) => setForm((f) => ({ ...f, terms: e.target.checked }))}
                 />
                 <label className="ml-2 block text-sm text-on-surface-variant" htmlFor="terms">
-                  Acepto los{' '}
-                  <a className="font-medium text-primary hover:text-primary-container transition-colors" href="#">
-                    Términos y Condiciones
-                  </a>
+                    Acepto los{' '}
+                    <Link className="font-medium text-primary hover:text-primary-container transition-colors" to="/terminos">
+                      Términos y Condiciones
+                    </Link>{' '}
+                    y la{' '}
+                    <Link className="font-medium text-primary hover:text-primary-container transition-colors" to="/privacidad">
+                      Política de privacidad
+                    </Link>
                 </label>
               </div>
 
@@ -238,6 +290,7 @@ export function SignUp() {
                 </button>
               </div>
             </form>
+            )}
 
             {/* Login Link */}
             <div className="mt-8 text-center">

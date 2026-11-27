@@ -1,6 +1,6 @@
 # G-amount
 
-> **Luminous Engine** · Control de finanzas personales con auditoría, reportes y automatizaciones.
+> **Tus finanzas en un solo flujo** · Control de finanzas personales con auditoría, reportes y automatizaciones.
 
 Aplicación web para registrar ingresos y egresos, controlar cuentas por cobrar/pagar y generar reportes exportables, con una experiencia responsiva para escritorio y móvil.
 
@@ -72,6 +72,33 @@ SUPERADMIN_USER_ID=           # UUID del superadmin (Edge Function admin-users, 
 # SUPABASE_JWKS_URL opcional: las Edge Functions derivan las JWKS de SUPABASE_URL.
 ```
 
+### Confirmación de correo al registrarse
+
+Activa **Confirm email** en tu proyecto de Supabase (*Authentication → Providers → Email*). Registra también el dominio de la app en **Site URL / Redirect URLs** para que el enlace de confirmación redirija correctamente.
+
+Con esta opción activa, `signUp` crea el usuario y su perfil en `public.users` (mediante el trigger), pero no devuelve sesión: la app muestra la pantalla «Revisa tu correo» y permite reenviar el enlace con `supabase.auth.resend`. El acceso queda habilitado solo tras la confirmación.
+
+> Supabase envía estos correos con su servicio integrado, sujeto a los límites del plan: solo entrega a correos del equipo y permite 2 mensajes por hora. Para registros reales usa el hook con Resend que se describe abajo.
+
+#### Correo de confirmación con Resend (recomendado)
+
+El `RESEND_API_KEY` ya configurado para los recordatorios se reutiliza en la Edge Function `send-auth-email`, que envía los correos de Supabase Auth (confirmación, recuperación, invitaciones y cambio de correo) en español.
+
+```bash
+supabase functions deploy send-auth-email --no-verify-jwt
+```
+
+En Supabase → Authentication → Hooks, crea un hook **Send Email** de tipo HTTPS con la URL `https://TU-PROJECT-REF.supabase.co/functions/v1/send-auth-email`, pulsa **Generate Secret** y guarda el secreto:
+
+```bash
+supabase secrets set SEND_EMAIL_HOOK_SECRET="v1,whsec_..."
+supabase secrets set AUTH_FROM_EMAIL="G-amount <no-reply@tu-dominio.com>"
+```
+
+Con el hook activo, Supabase Auth no usa SMTP (ni el integrado), así que un hook anterior apuntando directamente a `api.resend.com` sin key —que produce *No API key found in request*— debe reemplazarse por este.
+
+> **Importante:** `onboarding@resend.dev` es solo para pruebas: Resend rechaza cualquier destinatario que no sea el correo de tu cuenta (*The resend.dev domain is for testing and can only send to your own email address*). En Resend → **Domains** añade tu dominio, publica los registros DNS y espera a que figure como **Verified**. Después guarda `AUTH_FROM_EMAIL` (y `REMINDER_FROM_EMAIL`) con un remitente de ese dominio, por ejemplo `G-amount <no-reply@tu-dominio.com>`, y vuelve a desplegar las funciones para que tomen los nuevos secrets.
+
 ### Edge Functions (Supabase)
 
 Las funciones se despliegan con la CLI de Supabase. Ejecuta antes de desplegar:
@@ -88,11 +115,12 @@ supabase secrets set REMINDER_FROM_EMAIL="G-amount <tu@dominio.com>"
 ```bash
 supabase functions deploy admin-users --no-verify-jwt
 supabase functions deploy send-reminders --no-verify-jwt
+supabase functions deploy send-auth-email --no-verify-jwt
 ```
 
 > **Endurecimiento:** el build de producción inyecta una `Content-Security-Policy` estricta (vía `vite.config.ts`), y la Edge Function `admin-users` registra en `public.admin_audit_log` los accesos denegados y borrados de usuarios (migración `20260814120000_admin_audit_log.sql`).
 
-> **Aviso:** las migraciones de `supabase/migrations/` contienen el esquema de la BD y están excluidas de git. Aplícalas en tu proyecto con la CLI de Supabase antes de usar la app; el secret del cron se parametriza por variables de entorno, nunca se commitea.
+> **Aviso:** las migraciones de `supabase/migrations/` contienen el esquema de la BD y están excluidas de git. Aplícalas en tu proyecto con la CLI de Supabase antes de usar la app. La migración del cron lleva un valor de ejemplo: sustitúyelo por el mismo `CRON_SECRET` antes de ejecutarla y no subas el valor real a git.
 
 ## Scripts
 

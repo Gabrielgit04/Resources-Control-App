@@ -70,6 +70,7 @@ export function Sidebar() {
           <Icon name="help" />
           <span>Guía de la app</span>
         </button>
+      
       </div>
     </nav>
   )
